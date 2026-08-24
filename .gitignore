@@ -1,5 +1,6 @@
 .env
 .env.*
+!.env.example
 __pycache__/
 *.pyc
 .venv/
@@ -11,3 +12,11 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# personal research history must never live in the repo -- it's stored at
+# ~/.marketsignal/history/ outside this project entirely; this is defense
+# in depth in case that ever changes
+.marketsignal/
