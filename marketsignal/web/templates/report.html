@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}MarketSignal: {{ result.financials.company_name }} ({{ result.financials.ticker }}){% endblock %}
+{% block content %}
+<div class="container">
+  <p><a href="/app">&larr; Research another ticker</a></p>
+  <h1>{{ result.financials.company_name }} ({{ result.financials.ticker }})</h1>
+
+  <dl class="meta">
+    <dt>Sector</dt><dd>{{ result.financials.sector or "n/a" }} / {{ result.financials.industry or "n/a" }}</dd>
+    <dt>As of</dt><dd>{{ result.financials.as_of }}</dd>
+    <dt>Overall signal</dt>
+    <dd>
+      {% if result.overall_score is not none %}
+        {{ "%.2f"|format(result.overall_score) }} / 4.0 ({{ result.tier }})
+      {% else %}
+        insufficient data
+      {% endif %}
+    </dd>
+  </dl>
+
+  {% if what_changed %}
+  <div class="what-changed-box">
+    <h3>What changed since {{ what_changed.previous_as_of }}</h3>
+    <p>
+      Overall signal:
+      {% if what_changed.overall_score_delta is not none %}
+        {{ "%+.2f"|format(what_changed.overall_score_delta) }}
+      {% else %}
+        n/a
+      {% endif %}
+    </p>
+    <ul>
+      {% for category_id, delta in what_changed.category_deltas.items() %}
+      <li>{{ category_id.replace("_", " ")|title }}:
+        {% if delta is not none %}{{ "%+.2f"|format(delta) }}{% else %}n/a{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <h3>Category scores</h3>
+  <table>
+    <thead><tr><th>Category</th><th>Score</th><th>Signal</th></tr></thead>
+    <tbody>
+      {% for category in result.category_scores %}
+      <tr>
+        <td>{{ category.name }}</td>
+        {% if category.score is not none %}
+        <td>{{ "%.2f"|format(category.score) }}</td>
+        <td>{{ tier_for_score(category.score) }}</td>
+        {% else %}
+        <td>n/a</td>
+        <td>No data available</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Metric detail</h3>
+  {% for category in result.category_scores %}
+  <h4>{{ category.name }}</h4>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th><th>Signal</th></tr></thead>
+    <tbody>
+      {% for metric in category.metric_scores %}
+      <tr>
+        <td>{{ metric.label }}</td>
+        <td>{{ format_value(metric.key, metric.value) }}</td>
+        <td>{% if metric.score is not none %}{{ signal_levels[metric.score] }}{% else %}n/a{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+
+  {% if ai_narrative %}
+  <h3>Thesis</h3>
+  <p><strong>Confidence:</strong> {{ ai_narrative.confidence }}</p>
+  <p>{{ ai_narrative.thesis }}</p>
+
+  {% if ai_narrative.risk_factors %}
+  <h4>Key risk factors</h4>
+  <ul>
+    {% for risk in ai_narrative.risk_factors %}
+    <li>{{ risk }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
+
+  <p class="disclaimer">Not financial advice. MarketSignal shows deterministic signals and, optionally, AI-written reasoning about them; it does not recommend buying or selling anything.</p>
+</div>
+{% endblock %}

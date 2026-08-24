@@ -18,7 +18,7 @@ PERCENT_METRICS = {
 }
 
 
-def _format_value(key: str, value: float | None) -> str:
+def format_value(key: str, value: float | None) -> str:
     if value is None:
         return "n/a"
     if key in PERCENT_METRICS:
@@ -80,7 +80,7 @@ def render(
         lines.append("| Metric | Value | Signal |")
         lines.append("|---|---|---|")
         for metric in category.metric_scores:
-            value_str = _format_value(metric.key, metric.value)
+            value_str = format_value(metric.key, metric.value)
             signal_str = SIGNAL_LEVELS[metric.score] if metric.score is not None else "n/a"
             lines.append(f"| {metric.label} | {value_str} | {signal_str} |")
         lines.append("")

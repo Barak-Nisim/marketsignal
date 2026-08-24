@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}MarketSignal: Live demo{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="demo-banner">This is the live demo. Enter any US stock or ETF ticker; it pulls real market data. <a href="/">&larr; Back to overview</a></p>
+
+  <h1>Research a ticker</h1>
+  <p class="subtitle">Real data from Yahoo Finance, scored in your browser, on your machine.</p>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/research">
+    <label for="ticker">Ticker symbol</label>
+    <input type="text" id="ticker" name="ticker" value="{{ ticker }}" class="ticker-input" autocomplete="off" spellcheck="false">
+    <p class="field-caption">Try a well-known one to start: AAPL, MSFT, SPY, VOO.</p>
+
+    <div class="controls">
+      <label class="checkbox">
+        <input type="checkbox" name="use_ai" value="1" {% if not ai_available %}disabled{% endif %}>
+        Include AI thesis
+        {% if not ai_available %}
+          <span class="hint">(set ANTHROPIC_API_KEY to enable)</span>
+        {% endif %}
+      </label>
+      <button type="submit">Run research</button>
+    </div>
+    <p class="field-caption">Scores the ticker across five categories and shows what changed since your last look. With AI narration on, it also writes a reasoned thesis and confidence level.</p>
+  </form>
+</div>
+{% endblock %}

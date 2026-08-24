@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}How MarketSignal works{% endblock %}
+{% block content %}
+
+<section class="page-header">
+  <p class="eyebrow">Methodology</p>
+  <h1>How MarketSignal works</h1>
+  <p class="hero-sub">
+    Every step below is real: the same code that renders this page pulls the
+    market data and runs the scoring engine. Nothing here is a marketing
+    simplification of something different happening under the hood.
+  </p>
+</section>
+
+<section class="method-steps">
+
+  <div class="method-step reveal">
+    <span class="method-num">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+    </span>
+    <div>
+      <h2>Pull real financial data</h2>
+      <p>
+        A US ticker is looked up against Yahoo Finance for current fundamentals
+        (valuation ratios, margins, growth, debt) and a year of price history.
+        Not every ticker publishes every metric; ETFs in particular usually have
+        no income-statement data at all, since they aren't operating companies.
+      </p>
+    </div>
+  </div>
+
+  <div class="method-step reveal">
+    <span class="method-num">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+    </span>
+    <div>
+      <h2>Score five categories against fixed thresholds</h2>
+      <p>
+        Valuation, Growth, Profitability, Financial Health, and Momentum are each
+        a weighted average of metric scores, on a 0&ndash;4 scale from Weak to
+        Strong. Every threshold is documented and recomputable by hand; there is
+        no machine-learned model deciding the number.
+      </p>
+    </div>
+  </div>
+
+  <div class="method-step reveal">
+    <span class="method-num">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+    </span>
+    <div>
+      <h2>Missing data is excluded, not penalized</h2>
+      <p>
+        A missing P/E ratio doesn't mean a company is doing poorly; it usually
+        means the metric doesn't apply (negative earnings, or an ETF with no
+        earnings at all). Missing metrics are excluded from their category's
+        average rather than scored as zero. If an entire category has no
+        available data, that category is excluded from the overall score too.
+      </p>
+    </div>
+  </div>
+
+  <div class="method-step reveal">
+    <span class="method-num">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z"/></svg>
+    </span>
+    <div>
+      <h2>AI narrates. It never re-scores, and it never says Buy or Sell.</h2>
+      <p>
+        With AI narration on, Claude receives the already-computed scores as
+        structured data and is explicitly instructed to write a reasoned thesis
+        and confidence level, not to recompute the numbers or issue a trade
+        recommendation. The scoring engine works, and is fully tested, with zero
+        dependency on any AI service.
+      </p>
+    </div>
+  </div>
+
+  <div class="method-step reveal">
+    <span class="method-num">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h4l3-9 4 18 3-9h4"/></svg>
+    </span>
+    <div>
+      <h2>What changed since last time</h2>
+      <p>
+        Every run is saved locally (outside the codebase entirely, since it's
+        real personal research data). The next run against the same ticker shows
+        the delta against your last look, so you're reading what moved, not
+        re-reading the whole picture from scratch.
+      </p>
+    </div>
+  </div>
+
+</section>
+
+<section class="method-detail-link">
+  <div class="detail-card reveal">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    <p>
+      Want the exact thresholds for every metric? It's documented in the repo:
+      <a href="https://github.com/Barak-Nisim/marketsignal/blob/main/docs/scoring_methodology.md">scoring methodology</a>
+      and <a href="https://github.com/Barak-Nisim/marketsignal/blob/main/docs/architecture.md">architecture</a>.
+    </p>
+  </div>
+</section>
+
+<section class="final-cta">
+  <h2>See it score a real ticker.</h2>
+  <a href="/app" class="btn btn-primary btn-large">Try the live demo</a>
+</section>
+
+{% endblock %}
