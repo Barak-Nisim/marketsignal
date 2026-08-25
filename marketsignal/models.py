@@ -97,6 +97,16 @@ class WhatChanged:
 
 
 @dataclass(frozen=True)
+class JournalEntry:
+    """A user-authored note attached to a ticker, persisted separately from
+    the AI-generated thesis -- your own reasoning, not narrated output."""
+
+    ticker: str
+    note: str
+    written_at: str
+
+
+@dataclass(frozen=True)
 class ThesisDelta:
     """A deterministic diff between two AI-generated theses for the same
     ticker: what was added or dropped, not a re-narrated comparison. No AI

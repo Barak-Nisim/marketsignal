@@ -9,6 +9,7 @@ from pathlib import Path
 from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
 from marketsignal.favorites import add_favorite, list_favorites, remove_favorite
 from marketsignal.history import load_history, record_and_diff
+from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import render
 from marketsignal.scoring import score_financials
@@ -45,6 +46,14 @@ def _build_parser() -> argparse.ArgumentParser:
     add_parser.add_argument("ticker")
     remove_parser = favorites_action.add_parser("remove", help="Remove a ticker from favorites")
     remove_parser.add_argument("ticker")
+
+    journal = subparsers.add_parser("journal", help="Manage your own notes on a ticker")
+    journal_action = journal.add_subparsers(dest="journal_action", required=True)
+    journal_add = journal_action.add_parser("add", help="Add a note to a ticker's journal")
+    journal_add.add_argument("ticker")
+    journal_add.add_argument("note")
+    journal_list = journal_action.add_parser("list", help="List a ticker's journal entries")
+    journal_list.add_argument("ticker")
 
     return parser
 
@@ -110,6 +119,12 @@ def _run_research(args: argparse.Namespace) -> int:
                 f"| {o.pct_change * 100:+.1f}% |\n"
             )
 
+    journal_entries = load_journal(financials.ticker)
+    if journal_entries:
+        report += "\n\n## Your journal\n\n"
+        for entry in journal_entries:
+            report += f"- **{entry.written_at}:** {entry.note}\n"
+
     if args.output:
         Path(args.output).write_text(report, encoding="utf-8")
         print(f"Report written to {args.output}", file=sys.stderr)
@@ -123,6 +138,21 @@ def _run_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
     uvicorn.run("marketsignal.web.app:app", host=args.host, port=args.port, reload=args.reload)
+    return 0
+
+
+def _run_journal(args: argparse.Namespace) -> int:
+    if args.journal_action == "add":
+        entry = add_journal_entry(args.ticker, args.note)
+        print(f"Added journal entry for {entry.ticker} ({entry.written_at}).", file=sys.stderr)
+    elif args.journal_action == "list":
+        entries = load_journal(args.ticker)
+        if not entries:
+            print(f"No journal entries for {args.ticker.upper()} yet.", file=sys.stderr)
+        else:
+            for entry in entries:
+                print(f"{entry.written_at}: {entry.note}")
+
     return 0
 
 
@@ -154,6 +184,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_serve(args)
     if args.command == "favorites":
         return _run_favorites(args)
+    if args.command == "journal":
+        return _run_journal(args)
 
     parser.print_help()
     return 1

@@ -171,3 +171,39 @@ def test_favorites_remove(capsys, monkeypatch, tmp_path):
     captured = capsys.readouterr()
     assert exit_code == 0
     assert "No favorites yet." in captured.err
+
+
+def test_journal_list_when_empty(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_JOURNAL_DIR", str(tmp_path))
+
+    exit_code = main(["journal", "list", "AAPL"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "No journal entries for AAPL yet." in captured.err
+
+
+def test_journal_add_and_list(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_JOURNAL_DIR", str(tmp_path))
+
+    main(["journal", "add", "aapl", "Watching for Q2 guidance."])
+    exit_code = main(["journal", "list", "AAPL"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Watching for Q2 guidance." in captured.out
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_shows_journal_entries(mock_fetch, capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_JOURNAL_DIR", str(tmp_path / "journal"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+    main(["journal", "add", "AAPL", "Watching for Q2 guidance."])
+
+    exit_code = main(["research", "AAPL", "--no-ai"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "## Your journal" in captured.out
+    assert "Watching for Q2 guidance." in captured.out

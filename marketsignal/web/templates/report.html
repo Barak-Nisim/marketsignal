@@ -214,6 +214,24 @@
   {% endif %}
   {% endif %}
 
+  <div class="journal-box">
+    <h3>Your journal</h3>
+    {% if journal_entries %}
+    <ul class="journal-entries">
+      {% for entry in journal_entries %}
+      <li><span class="journal-date">{{ entry.written_at }}</span> {{ entry.note }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="field-caption">No notes yet for {{ result.financials.ticker }}. Your own reasoning, not AI-generated -- kept separate from the thesis above.</p>
+    {% endif %}
+    <form method="post" action="/journal/add" class="journal-form">
+      <input type="hidden" name="ticker" value="{{ result.financials.ticker }}">
+      <textarea name="note" rows="2" placeholder="Add a note..." required></textarea>
+      <button type="submit">Add note</button>
+    </form>
+  </div>
+
   <p class="disclaimer">Not financial advice. MarketSignal shows deterministic signals and, optionally, AI-written reasoning about them; it does not recommend buying or selling anything.</p>
 </div>
 {% endblock %}

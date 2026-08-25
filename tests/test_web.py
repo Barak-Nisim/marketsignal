@@ -260,3 +260,37 @@ def test_research_shows_thesis_delta_on_second_ai_run(
     assert "Earnings report" in response.text
     assert "thesis-delta-added" in response.text
     assert "thesis-delta-removed" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_journal_add_then_shows_on_report(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    monkeypatch.setenv("MARKETSIGNAL_JOURNAL_DIR", str(tmp_path / "journal"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    add_response = client.post(
+        "/journal/add",
+        data={"ticker": "aapl", "note": "Watching for Q2 guidance."},
+        follow_redirects=False,
+    )
+    assert add_response.status_code == 303
+    assert add_response.headers["location"] == "/app?ticker=AAPL"
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert "Watching for Q2 guidance." in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_journal_ignores_blank_note(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    monkeypatch.setenv("MARKETSIGNAL_JOURNAL_DIR", str(tmp_path / "journal"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    client.post("/journal/add", data={"ticker": "AAPL", "note": "   "}, follow_redirects=False)
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert "No notes yet" in response.text

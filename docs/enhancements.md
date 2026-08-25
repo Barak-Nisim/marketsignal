@@ -62,14 +62,11 @@ Not originally on this list, added as they were built:
 34. **[Shipped]** Evidence & Provenance: catalysts and risk factors are each tagged `Fact` / `Inference` / `Opinion` in the structured output, rendered as colored badges on the report. Also fixed `report/markdown.py`, which had gone stale against the bull/bear schema and was silently dropping the thesis from CLI output. See `ai/narrator.py`.
 35. **[Shipped]** Thesis tracking over time: each AI thesis is now persisted to `~/.marketsignal/thesis_history/<TICKER>.json`, and the next research run shows what was added or dropped (catalysts, risk factors, invalidation conditions, confidence) versus the prior thesis. The diff is a deterministic set comparison over the structured fields, not a re-narrated prose comparison -- narrating "revenue outlook strengthened" in words would need its own AI call, which was deliberately left out to keep this addition free. See `thesis_history.py`.
 36. **[Shipped]** "What would change my mind" invalidation checking: each research run now passes the prior thesis's invalidation conditions (via `thesis_history.previous_invalidation_conditions`) into the same AI call as extra context, so the model classifies each one Triggered / Not triggered / Unclear against today's data, no separate AI call and no live/scheduled monitor. See the `invalidation_check` field in `ai/narrator.py` and the "Invalidation check" section on the report page.
+37. **[Shipped]** Investment Journal: a persisted, user-authored note attached to a ticker, kept separate from the AI-generated thesis. Add a note via `marketsignal journal add <TICKER> <note>` or the form on the report page; entries show up on later research runs for that ticker. See `journal.py`.
 
 ## Bigger bets (real architecture decisions, plan formally before building)
 
-The 2026-08-25 conversation with Barak reframed MarketSignal from "an AI stock research app" to "a system that maintains and challenges an investment thesis over time" (five layers: Thesis Engine, Multi-Agent Debate, Evidence/Provenance, Historical Accountability, Portfolio Intelligence). Reviewed and sequenced the same day. Agreed direction below; items are numbered in build order, not list order.
-
-**Sequence 1 -- next up, cheap, no new infra:**
-
-37. **[Minor]** Investment Journal: a persisted, user-authored note attached to a ticker (your own reasoning, not AI-generated), surfaced on later visits alongside how the thesis has since moved.
+The 2026-08-25 conversation with Barak reframed MarketSignal from "an AI stock research app" to "a system that maintains and challenges an investment thesis over time" (five layers: Thesis Engine, Multi-Agent Debate, Evidence/Provenance, Historical Accountability, Portfolio Intelligence). Reviewed and sequenced the same day. Sequence 1 (items 34-37, all cheap and no new infra) is now fully shipped.
 
 **Sequence 2 -- larger, needs a prerequisite or an explicit go-ahead first:**
 

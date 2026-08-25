@@ -19,6 +19,7 @@ from marketsignal.charts import sparkline_svg
 from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
 from marketsignal.favorites import add_favorite, is_favorite, list_favorites, remove_favorite
 from marketsignal.history import list_recent_tickers, load_history, record_and_diff
+from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import format_value
@@ -95,6 +96,13 @@ def favorites_remove(ticker: str = Form(...)):
     return RedirectResponse(url="/app", status_code=303)
 
 
+@app.post("/journal/add")
+def journal_add(ticker: str = Form(...), note: str = Form(...)):
+    if note.strip():
+        add_journal_entry(ticker, note.strip())
+    return RedirectResponse(url=f"/app?ticker={ticker.upper()}", status_code=303)
+
+
 @app.post("/research", response_class=HTMLResponse)
 def research(request: Request, ticker: str = Form(...), use_ai: str | None = Form(None)):
     try:
@@ -137,5 +145,6 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "trend_sparkline": sparkline_svg([s.overall_score for s in trend]),
             "trend_count": len(trend),
             "outcomes": outcomes,
+            "journal_entries": load_journal(financials.ticker),
         },
     )
