@@ -1,6 +1,8 @@
 """Calls the Claude API to synthesize a ScoreResult into a structured
 investment thesis: a bull case, a bear case, confidence, catalysts, risk
-factors, and what would change the reader's mind.
+factors, and what would change the reader's mind. If a prior thesis
+exists, the same call also checks its invalidation conditions and its
+catalyst/risk-factor claims against the current data.
 
 This module never recomputes or overrides scores -- it only narrates the
 deterministic output of marketsignal.scoring. Requires ANTHROPIC_API_KEY
@@ -78,6 +80,22 @@ OUTPUT_SCHEMA = {
                 "additionalProperties": False,
             },
         },
+        "claim_accuracy_check": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "claim": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": ["Held up", "Did not hold up", "Too early to tell"],
+                    },
+                    "explanation": {"type": "string"},
+                },
+                "required": ["claim", "status", "explanation"],
+                "additionalProperties": False,
+            },
+        },
     },
     "required": [
         "bull_case",
@@ -88,6 +106,7 @@ OUTPUT_SCHEMA = {
         "risk_factors",
         "what_would_change_my_mind",
         "invalidation_check",
+        "claim_accuracy_check",
     ],
     "additionalProperties": False,
 }
@@ -97,6 +116,7 @@ def generate_narrative(
     result: ScoreResult,
     what_changed: WhatChanged | None = None,
     previous_invalidation_conditions: list[str] | None = None,
+    previous_claims: list[dict] | None = None,
 ) -> dict:
     load_dotenv()
     client = anthropic.Anthropic()
@@ -109,7 +129,7 @@ def generate_narrative(
             {
                 "role": "user",
                 "content": build_user_prompt(
-                    result, what_changed, previous_invalidation_conditions
+                    result, what_changed, previous_invalidation_conditions, previous_claims
                 ),
             }
         ],

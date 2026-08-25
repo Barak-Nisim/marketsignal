@@ -59,6 +59,18 @@
   </div>
   {% endif %}
 
+  {% if accuracy_summary and accuracy_summary.judged %}
+  <div class="outcomes-box track-record-box">
+    <h3>Track record</h3>
+    <p>
+      {{ accuracy_summary.held_up }} of {{ accuracy_summary.judged }} judged fundamental claims
+      held up ({{ "%.0f"|format(accuracy_summary.accuracy_pct * 100) }}%)
+      {%- if accuracy_summary.too_early_to_tell %}, {{ accuracy_summary.too_early_to_tell }} too early to tell{% endif %}.
+    </p>
+    <p class="field-caption">Tracks whether past catalyst and risk-factor claims held up against the fundamental metric they were grounded in, not whether the stock price moved.</p>
+  </div>
+  {% endif %}
+
   {% if what_changed %}
   <div class="what-changed-box">
     <h3>What changed since {{ what_changed.previous_as_of }}</h3>
@@ -125,6 +137,22 @@
       <li>
         <span class="invalidation-status invalidation-status-{{ check.status|lower|replace(' ', '-') }}">{{ check.status }}</span>
         {{ check.condition }}
+        <span class="field-caption">{{ check.explanation }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if ai_narrative and ai_narrative.claim_accuracy_check %}
+  <div class="what-changed-box invalidation-check-box">
+    <h3>Claim accuracy check</h3>
+    <p class="field-caption">Catalysts and risk factors from the last thesis, checked against today's data.</p>
+    <ul>
+      {% for check in ai_narrative.claim_accuracy_check %}
+      <li>
+        <span class="claim-status claim-status-{{ check.status|lower|replace(' ', '-') }}">{{ check.status }}</span>
+        {{ check.claim }}
         <span class="field-caption">{{ check.explanation }}</span>
       </li>
       {% endfor %}

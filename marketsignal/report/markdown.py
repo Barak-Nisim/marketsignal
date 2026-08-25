@@ -144,4 +144,14 @@ def render(
                 )
             lines.append("")
 
+        claim_accuracy_check = ai_narrative.get("claim_accuracy_check", [])
+        if claim_accuracy_check:
+            lines.append("### Claim accuracy check (claims from the last thesis)")
+            lines.append("")
+            for check in claim_accuracy_check:
+                lines.append(
+                    f"- **{check['status']}** -- {check['claim']} ({check['explanation']})"
+                )
+            lines.append("")
+
     return "\n".join(lines)

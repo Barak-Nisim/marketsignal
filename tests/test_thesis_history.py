@@ -1,6 +1,7 @@
 from marketsignal.thesis_history import (
     build_thesis_delta,
     load_thesis_history,
+    previous_claims,
     previous_invalidation_conditions,
     record_thesis_and_diff,
 )
@@ -106,3 +107,24 @@ def test_previous_invalidation_conditions_returns_most_recent_thesis(monkeypatch
     record_thesis_and_diff("AAPL", "2026-02-01", _narrative(invalidation=["Condition B"]))
 
     assert previous_invalidation_conditions("AAPL") == ["Condition B"]
+
+
+def test_previous_claims_empty_for_unknown_ticker(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path))
+
+    assert previous_claims("NOPE") == []
+
+
+def test_previous_claims_flattens_catalysts_and_risk_factors(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path))
+    record_thesis_and_diff(
+        "AAPL",
+        "2026-01-01",
+        _narrative(catalysts=["Earnings report"], risks=["High P/E"]),
+    )
+
+    claims = previous_claims("AAPL")
+
+    assert {"claim": "Earnings report", "based_on": "Growth", "source": "catalyst"} in claims
+    assert {"claim": "High P/E", "based_on": "Valuation", "source": "risk_factor"} in claims
+    assert len(claims) == 2

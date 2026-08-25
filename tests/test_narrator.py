@@ -44,6 +44,7 @@ FAKE_NARRATIVE = {
         "If margins compress below sector average",
     ],
     "invalidation_check": [],
+    "claim_accuracy_check": [],
 }
 
 
@@ -111,6 +112,14 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
         "Not triggered",
         "Unclear",
     ]
+    assert "claim_accuracy_check" in schema["required"]
+    accuracy_schema = schema["properties"]["claim_accuracy_check"]["items"]
+    assert set(accuracy_schema["required"]) == {"claim", "status", "explanation"}
+    assert accuracy_schema["properties"]["status"]["enum"] == [
+        "Held up",
+        "Did not hold up",
+        "Too early to tell",
+    ]
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")
@@ -126,6 +135,27 @@ def test_generate_narrative_includes_previous_invalidation_conditions_in_prompt(
     user_message = kwargs["messages"][0]["content"]
     assert "If revenue growth turns negative" in user_message
     assert "previous_invalidation_conditions" in user_message
+
+
+@patch("marketsignal.ai.narrator.anthropic.Anthropic")
+def test_generate_narrative_includes_previous_claims_in_prompt(mock_anthropic):
+    mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
+
+    generate_narrative(
+        _sample_result(),
+        previous_claims=[
+            {
+                "claim": "Elevated valuation multiples",
+                "based_on": "Valuation",
+                "source": "risk_factor",
+            }
+        ],
+    )
+
+    _, kwargs = mock_anthropic.return_value.messages.create.call_args
+    user_message = kwargs["messages"][0]["content"]
+    assert "Elevated valuation multiples" in user_message
+    assert "previous_claims" in user_message
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")

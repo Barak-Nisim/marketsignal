@@ -97,6 +97,13 @@ def test_render_includes_ai_thesis_when_provided():
                 "explanation": "Revenue growth is still 8% year over year.",
             }
         ],
+        "claim_accuracy_check": [
+            {
+                "claim": "Elevated valuation multiples",
+                "status": "Held up",
+                "explanation": "Trailing P/E is still elevated.",
+            }
+        ],
     }
 
     report = render(_sample_result(), ai_narrative=ai_narrative)
@@ -111,3 +118,5 @@ def test_render_includes_ai_thesis_when_provided():
     assert "If revenue growth turns negative" in report
     assert "**Not triggered** -- If revenue growth turns negative" in report
     assert "Revenue growth is still 8% year over year." in report
+    assert "**Held up** -- Elevated valuation multiples" in report
+    assert "Trailing P/E is still elevated." in report

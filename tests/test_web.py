@@ -262,6 +262,48 @@ def test_research_shows_thesis_delta_on_second_ai_run(
     assert "thesis-delta-removed" in response.text
 
 
+@patch("marketsignal.ai.narrator.generate_narrative")
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_shows_claim_accuracy_and_track_record(
+    mock_fetch, mock_narrate, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path / "thesis"))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "fake-key-for-test")
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    first_narrative = {
+        "bull_case": "Strong growth.",
+        "bear_case": "Rich valuation.",
+        "confidence": "Medium",
+        "key_evidence": ["Valuation"],
+        "catalysts": [],
+        "risk_factors": [
+            {"factor": "High P/E", "claim_type": "Fact", "based_on": "Valuation"}
+        ],
+        "what_would_change_my_mind": [],
+    }
+    second_narrative = {
+        **first_narrative,
+        "claim_accuracy_check": [
+            {"claim": "High P/E", "status": "Held up", "explanation": "P/E is still elevated."}
+        ],
+    }
+
+    mock_narrate.return_value = first_narrative
+    client.post("/research", data={"ticker": "AAPL", "use_ai": "1"})
+
+    mock_narrate.return_value = second_narrative
+    response = client.post("/research", data={"ticker": "AAPL", "use_ai": "1"})
+
+    assert response.status_code == 200
+    assert "Track record" in response.text
+    assert "1 of 1 judged fundamental claims" in response.text
+    assert "claim-status-held-up" in response.text
+    assert "P/E is still elevated." in response.text
+
+
 @patch("marketsignal.web.app.fetch_raw_financials")
 def test_journal_add_then_shows_on_report(mock_fetch, monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))

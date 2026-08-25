@@ -6,6 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from marketsignal.accuracy import compute_accuracy_summary
 from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
 from marketsignal.favorites import add_favorite, list_favorites, remove_favorite
 from marketsignal.history import load_history, record_and_diff
@@ -13,7 +14,12 @@ from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import render
 from marketsignal.scoring import score_financials
-from marketsignal.thesis_history import previous_invalidation_conditions, record_thesis_and_diff
+from marketsignal.thesis_history import (
+    load_thesis_history,
+    previous_claims,
+    previous_invalidation_conditions,
+    record_thesis_and_diff,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -70,14 +76,27 @@ def _run_research(args: argparse.Namespace) -> int:
 
     ai_narrative = None
     thesis_delta = None
+    accuracy_summary = None
     if not args.no_ai:
         from marketsignal.ai.narrator import generate_narrative
 
         prior_conditions = previous_invalidation_conditions(financials.ticker)
-        ai_narrative = generate_narrative(result, what_changed, prior_conditions)
+        prior_claims = previous_claims(financials.ticker)
+        ai_narrative = generate_narrative(result, what_changed, prior_conditions, prior_claims)
         thesis_delta = record_thesis_and_diff(financials.ticker, financials.as_of, ai_narrative)
+        accuracy_summary = compute_accuracy_summary(load_thesis_history(financials.ticker))
 
     report = render(result, what_changed=what_changed, ai_narrative=ai_narrative)
+
+    if accuracy_summary and accuracy_summary.judged:
+        pct = accuracy_summary.accuracy_pct
+        report += (
+            f"\n\n## Track record\n\n{accuracy_summary.held_up} of {accuracy_summary.judged} "
+            f"judged fundamental claims held up ({pct * 100:.0f}%)"
+        )
+        if accuracy_summary.too_early_to_tell:
+            report += f", {accuracy_summary.too_early_to_tell} too early to tell"
+        report += ".\n"
 
     if thesis_delta:
         report += f"\n\n## What changed in the thesis since {thesis_delta.previous_as_of}\n\n"

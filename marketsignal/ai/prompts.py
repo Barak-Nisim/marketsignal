@@ -1,13 +1,15 @@
 """Prompt construction for the AI narrator.
 
 The prompt hands the model a JSON payload derived entirely from the
-deterministic ScoreResult (and, if available, the what-changed diff) and
-asks it to synthesize that into a structured investment thesis: a bull
-case, a bear case, catalysts, risk factors, and what would change the
-reader's mind. It is explicitly told not to recompute scores, not to
-invent metrics, and not to issue a direct Buy/Hold/Sell recommendation --
-MarketSignal's design choice is an analytical signal plus reasoning, not
-a directive.
+deterministic ScoreResult (and, if available, the what-changed diff, prior
+invalidation conditions, and prior claims) and asks it to synthesize that
+into a structured investment thesis: a bull case, a bear case, catalysts,
+risk factors, and what would change the reader's mind. It is explicitly
+told not to recompute scores, not to invent metrics, and not to issue a
+direct Buy/Hold/Sell recommendation -- MarketSignal's design choice is an
+analytical signal plus reasoning, not a directive. Accuracy checks
+(invalidation_check, claim_accuracy_check) are explicitly scoped to
+fundamental metrics only, never price direction -- see SYSTEM_PROMPT.
 """
 
 from __future__ import annotations
@@ -36,7 +38,11 @@ SYSTEM_PROMPT = (
     "combination of metrics implies), or 'Opinion' (your own judgment about "
     "materiality or likelihood that goes beyond what the data alone shows). "
     "Do not over-classify as Fact -- if it required any reasoning to state, "
-    "it is an Inference or Opinion, not a Fact."
+    "it is an Inference or Opinion, not a Fact. When asked to check whether a "
+    "past claim held up, judge it strictly against the fundamental metric it "
+    "was grounded in (its 'based_on' field) -- never against whether the "
+    "stock price went up or down. This tool never grades or implies "
+    "price-direction accuracy."
 )
 
 
@@ -44,6 +50,7 @@ def build_payload(
     result: ScoreResult,
     what_changed: WhatChanged | None,
     previous_invalidation_conditions: list[str] | None = None,
+    previous_claims: list[dict] | None = None,
 ) -> dict:
     f = result.financials
     payload = {
@@ -73,6 +80,8 @@ def build_payload(
         }
     if previous_invalidation_conditions:
         payload["previous_invalidation_conditions"] = previous_invalidation_conditions
+    if previous_claims:
+        payload["previous_claims"] = previous_claims
     return payload
 
 
@@ -80,8 +89,11 @@ def build_user_prompt(
     result: ScoreResult,
     what_changed: WhatChanged | None,
     previous_invalidation_conditions: list[str] | None = None,
+    previous_claims: list[dict] | None = None,
 ) -> str:
-    payload = build_payload(result, what_changed, previous_invalidation_conditions)
+    payload = build_payload(
+        result, what_changed, previous_invalidation_conditions, previous_claims
+    )
     invalidation_instruction = (
         "8. An 'invalidation_check': if 'previous_invalidation_conditions' is "
         "present in the input, evaluate each one against the current data and "
@@ -94,6 +106,24 @@ def build_user_prompt(
         if previous_invalidation_conditions
         else "8. An 'invalidation_check': return an empty list, since there is "
         "no prior thesis for this ticker to check against yet."
+    )
+    accuracy_instruction = (
+        "9. A 'claim_accuracy_check': if 'previous_claims' is present in the "
+        "input, evaluate each testable one against the current data and "
+        "return one object per claim you can actually judge, with 'claim' "
+        "(copied exactly), 'status' (Held up if the current data confirms "
+        "the underlying fundamental metric moved as the claim implied, Did "
+        "not hold up if the current data now contradicts it, Too early to "
+        "tell if not enough has changed to judge yet), and a one-sentence "
+        "'explanation' citing the specific metric. Judge strictly against "
+        "the fundamental metric named in the claim's 'based_on' field -- "
+        "never against the stock price. Skip any claim that isn't a "
+        "testable prediction (e.g. a scheduled event like 'next earnings "
+        "report' with no directional claim attached) rather than forcing a "
+        "verdict on it. If 'previous_claims' is absent, return an empty list."
+        if previous_claims
+        else "9. A 'claim_accuracy_check': return an empty list, since there "
+        "is no prior thesis for this ticker to check against yet."
     )
     return (
         "Here is the scored research data, as JSON:\n\n"
@@ -126,5 +156,6 @@ def build_user_prompt(
         "7. 2-3 'what_would_change_my_mind' entries: specific, falsifiable "
         "conditions that would flip this view (e.g. 'if revenue growth turns "
         "negative next quarter'), not vague hedges.\n"
-        f"{invalidation_instruction}"
+        f"{invalidation_instruction}\n"
+        f"{accuracy_instruction}"
     )

@@ -15,6 +15,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from marketsignal.accuracy import compute_accuracy_summary
 from marketsignal.charts import sparkline_svg
 from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
 from marketsignal.favorites import add_favorite, is_favorite, list_favorites, remove_favorite
@@ -24,7 +25,12 @@ from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, tier_for_score
-from marketsignal.thesis_history import previous_invalidation_conditions, record_thesis_and_diff
+from marketsignal.thesis_history import (
+    load_thesis_history,
+    previous_claims,
+    previous_invalidation_conditions,
+    record_thesis_and_diff,
+)
 
 WEB_DIR = Path(__file__).parent
 TREND_WINDOW = 10  # most recent research runs shown in a trend sparkline
@@ -119,12 +125,15 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
 
     ai_narrative = None
     thesis_delta = None
+    accuracy_summary = None
     if use_ai and _ai_available():
         from marketsignal.ai.narrator import generate_narrative
 
         prior_conditions = previous_invalidation_conditions(financials.ticker)
-        ai_narrative = generate_narrative(result, what_changed, prior_conditions)
+        prior_claims = previous_claims(financials.ticker)
+        ai_narrative = generate_narrative(result, what_changed, prior_conditions, prior_claims)
         thesis_delta = record_thesis_and_diff(financials.ticker, financials.as_of, ai_narrative)
+        accuracy_summary = compute_accuracy_summary(load_thesis_history(financials.ticker))
 
     full_history = load_history(financials.ticker)
     trend = full_history[-TREND_WINDOW:]
@@ -138,6 +147,7 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "what_changed": what_changed,
             "ai_narrative": ai_narrative,
             "thesis_delta": thesis_delta,
+            "accuracy_summary": accuracy_summary,
             "tier_for_score": tier_for_score,
             "format_value": format_value,
             "signal_levels": SIGNAL_LEVELS,

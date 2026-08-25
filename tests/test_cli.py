@@ -140,6 +140,47 @@ def test_research_shows_thesis_delta_on_second_ai_run(
     assert "(dropped) Earnings report" in captured.out
 
 
+@patch("marketsignal.ai.narrator.generate_narrative")
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_shows_claim_accuracy_and_track_record(
+    mock_fetch, mock_narrate, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path / "thesis"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    first_narrative = {
+        "bull_case": "Strong growth.",
+        "bear_case": "Rich valuation.",
+        "confidence": "Medium",
+        "key_evidence": ["Valuation"],
+        "catalysts": [],
+        "risk_factors": [
+            {"factor": "High P/E", "claim_type": "Fact", "based_on": "Valuation"}
+        ],
+        "what_would_change_my_mind": [],
+    }
+    second_narrative = {
+        **first_narrative,
+        "claim_accuracy_check": [
+            {"claim": "High P/E", "status": "Held up", "explanation": "P/E is still elevated."}
+        ],
+    }
+
+    mock_narrate.return_value = first_narrative
+    main(["research", "AAPL"])
+
+    mock_narrate.return_value = second_narrative
+    exit_code = main(["research", "AAPL"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "## Track record" in captured.out
+    assert "1 of 1 judged fundamental claims held up (100%)" in captured.out
+    assert "### Claim accuracy check" in captured.out
+    assert "**Held up** -- High P/E" in captured.out
+
+
 def test_favorites_list_when_empty(capsys, monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path))
 

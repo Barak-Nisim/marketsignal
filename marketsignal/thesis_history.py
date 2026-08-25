@@ -54,6 +54,27 @@ def previous_invalidation_conditions(ticker: str) -> list[str]:
     return history[-1]["narrative"].get("what_would_change_my_mind", [])
 
 
+def previous_claims(ticker: str) -> list[dict]:
+    """The most recently recorded thesis's catalysts and risk factors for
+    this ticker, flattened into {claim, based_on, source} dicts, or [] if
+    there's no prior thesis. Fetched before generating a new narrative, same
+    reasoning as previous_invalidation_conditions -- checked in the same AI
+    call, no separate process."""
+    history = load_thesis_history(ticker)
+    if not history:
+        return []
+    narrative = history[-1]["narrative"]
+    claims = [
+        {"claim": c["catalyst"], "based_on": c["based_on"], "source": "catalyst"}
+        for c in narrative.get("catalysts", [])
+    ]
+    claims += [
+        {"claim": r["factor"], "based_on": r["based_on"], "source": "risk_factor"}
+        for r in narrative.get("risk_factors", [])
+    ]
+    return claims
+
+
 def _save_thesis_history(ticker: str, entries: list[dict]) -> None:
     path = _thesis_path(ticker)
     path.write_text(json.dumps(entries, indent=2), encoding="utf-8")

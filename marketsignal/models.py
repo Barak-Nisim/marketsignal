@@ -107,6 +107,27 @@ class JournalEntry:
 
 
 @dataclass(frozen=True)
+class AccuracySummary:
+    """A running tally of how past catalyst/risk-factor claims have held up
+    against later data, built from claim_accuracy_check entries recorded in
+    thesis_history over time. Scoped to fundamental-claim accuracy only --
+    never price-direction accuracy, which would function as a covert
+    Buy/Sell signal."""
+
+    held_up: int
+    did_not_hold_up: int
+    too_early_to_tell: int
+
+    @property
+    def judged(self) -> int:
+        return self.held_up + self.did_not_hold_up
+
+    @property
+    def accuracy_pct(self) -> float | None:
+        return (self.held_up / self.judged) if self.judged else None
+
+
+@dataclass(frozen=True)
 class ThesisDelta:
     """A deterministic diff between two AI-generated theses for the same
     ticker: what was added or dropped, not a re-narrated comparison. No AI
