@@ -1,3 +1,4 @@
+from dataclasses import replace
 from unittest.mock import patch
 
 from marketsignal.cli import main
@@ -16,6 +17,8 @@ FAKE_FINANCIALS = RawFinancials(
     trailing_pe=28,
     revenue_growth=0.08,
 )
+
+OLD_FINANCIALS = replace(FAKE_FINANCIALS, as_of="2020-01-01", current_price=100)
 
 
 @patch("marketsignal.cli.fetch_raw_financials")
@@ -67,6 +70,39 @@ def test_research_records_history_between_runs(mock_fetch, monkeypatch, tmp_path
 
     # second run should have a prior snapshot to diff against
     assert "What changed since 2026-01-01" in second_run_output.read_text(encoding="utf-8")
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_shows_outcome_tracking_for_old_signals(mock_fetch, capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.return_value = OLD_FINANCIALS
+    main(["research", "AAPL", "--no-ai"])  # records an old, cheap snapshot
+
+    mock_fetch.return_value = FAKE_FINANCIALS
+    exit_code = main(["research", "AAPL", "--no-ai"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "How past signals performed" in captured.out
+    assert "2020-01-01" in captured.out
+    assert "+50.0%" in captured.out  # (150 - 100) / 100
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_omits_outcome_tracking_on_first_run(mock_fetch, capsys, monkeypatch, tmp_path):
+    import datetime as dt
+
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    # a realistic "just researched right now" snapshot, unlike FAKE_FINANCIALS'
+    # hardcoded past as_of, so it's correctly too recent to show an outcome
+    todays_financials = replace(FAKE_FINANCIALS, as_of=dt.date.today().isoformat())
+    mock_fetch.return_value = todays_financials
+
+    exit_code = main(["research", "AAPL", "--no-ai"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "How past signals performed" not in captured.out
 
 
 def test_favorites_list_when_empty(capsys, monkeypatch, tmp_path):

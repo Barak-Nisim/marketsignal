@@ -86,6 +86,7 @@ class Snapshot:
     as_of: str
     overall_score: float | None
     category_scores: dict[str, float | None]
+    price: float | None = None  # current_price at snapshot time, for outcome tracking later
 
 
 @dataclass(frozen=True)

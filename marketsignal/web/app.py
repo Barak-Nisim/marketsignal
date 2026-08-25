@@ -20,6 +20,7 @@ from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_fin
 from marketsignal.favorites import add_favorite, is_favorite, list_favorites, remove_favorite
 from marketsignal.history import list_recent_tickers, load_history, record_and_diff
 from marketsignal.models import SIGNAL_LEVELS
+from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, tier_for_score
 
@@ -113,7 +114,9 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
 
         ai_narrative = generate_narrative(result, what_changed)
 
-    trend = load_history(financials.ticker)[-TREND_WINDOW:]
+    full_history = load_history(financials.ticker)
+    trend = full_history[-TREND_WINDOW:]
+    outcomes = compute_outcomes(full_history, financials.current_price)
 
     return templates.TemplateResponse(
         request,
@@ -128,5 +131,6 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "is_favorite": is_favorite(financials.ticker),
             "trend_sparkline": sparkline_svg([s.overall_score for s in trend]),
             "trend_count": len(trend),
+            "outcomes": outcomes,
         },
     )

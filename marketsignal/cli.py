@@ -8,7 +8,8 @@ from pathlib import Path
 
 from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
 from marketsignal.favorites import add_favorite, list_favorites, remove_favorite
-from marketsignal.history import record_and_diff
+from marketsignal.history import load_history, record_and_diff
+from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import render
 from marketsignal.scoring import score_financials
 
@@ -64,6 +65,21 @@ def _run_research(args: argparse.Namespace) -> int:
         ai_narrative = generate_narrative(result, what_changed)
 
     report = render(result, what_changed=what_changed, ai_narrative=ai_narrative)
+
+    outcomes = compute_outcomes(load_history(financials.ticker), financials.current_price)
+    if outcomes:
+        report += "\n\n## How past signals performed\n\n"
+        report += "| Signal date | Signal was | Since then | Price move |\n"
+        report += "|---|---|---|---|\n"
+        for o in outcomes:
+            if o.overall_score is not None:
+                score_text = f"{o.overall_score:.2f} ({o.tier_at_signal})"
+            else:
+                score_text = "n/a"
+            report += (
+                f"| {o.as_of} | {score_text} | {o.horizon_label} ({o.days_elapsed}d) "
+                f"| {o.pct_change * 100:+.1f}% |\n"
+            )
 
     if args.output:
         Path(args.output).write_text(report, encoding="utf-8")

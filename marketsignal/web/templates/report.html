@@ -37,6 +37,28 @@
   </div>
   {% endif %}
 
+  {% if outcomes %}
+  <div class="outcomes-box">
+    <h3>How past signals performed</h3>
+    <table>
+      <thead><tr><th>Signal date</th><th>Signal was</th><th>Since then</th><th>Price move</th></tr></thead>
+      <tbody>
+        {% for o in outcomes %}
+        <tr>
+          <td>{{ o.as_of }}</td>
+          <td>{{ "%.2f"|format(o.overall_score) if o.overall_score is not none else "n/a" }} ({{ o.tier_at_signal }})</td>
+          <td>{{ o.horizon_label }} ({{ o.days_elapsed }} days)</td>
+          <td class="{{ 'outcome-up' if o.pct_change > 0 else 'outcome-down' if o.pct_change < 0 else '' }}">
+            {{ "%+.1f"|format(o.pct_change * 100) }}%
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="field-caption">Price move since each signal's recorded price, compared to today's price. Not a claim that the signal caused the move.</p>
+  </div>
+  {% endif %}
+
   {% if what_changed %}
   <div class="what-changed-box">
     <h3>What changed since {{ what_changed.previous_as_of }}</h3>

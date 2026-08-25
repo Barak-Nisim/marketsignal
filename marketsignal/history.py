@@ -35,6 +35,7 @@ def _snapshot_from_result(result: ScoreResult) -> Snapshot:
         as_of=result.financials.as_of,
         overall_score=result.overall_score,
         category_scores={c.id: c.score for c in result.category_scores},
+        price=result.financials.current_price,
     )
 
 

@@ -463,6 +463,16 @@ label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
 .trend-box h3 { margin-top: 0; margin-bottom: 0.6rem; }
 .sparkline { display: block; }
 
+.outcomes-box {
+  background: var(--tint-bg);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0 1.5rem;
+}
+.outcomes-box h3 { margin-top: 0; }
+.outcome-up { color: #16a34a; font-weight: 600; }
+.outcome-down { color: #dc2626; font-weight: 600; }
+
 .controls { display: flex; align-items: center; justify-content: space-between; margin-top: 1.2rem; }
 .checkbox { display: flex; align-items: center; gap: 0.4rem; font-weight: normal; }
 .hint { color: var(--muted); font-size: 0.85rem; }

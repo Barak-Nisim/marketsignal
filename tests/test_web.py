@@ -1,3 +1,5 @@
+import datetime as dt
+from dataclasses import replace
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -190,3 +192,33 @@ def test_favorite_with_history_shows_tier_and_sparkline_on_app_page(
 
     assert "Not researched yet" not in response.text
     assert "sparkline" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_shows_outcome_tracking_for_old_signals(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    old_financials = replace(FAKE_FINANCIALS, as_of="2020-01-01", current_price=100)
+    mock_fetch.return_value = old_financials
+    client.post("/research", data={"ticker": "AAPL"})  # records an old, cheap snapshot
+
+    mock_fetch.return_value = FAKE_FINANCIALS
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert "How past signals performed" in response.text
+    assert "2020-01-01" in response.text
+    assert "+50.0%" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_omits_outcome_tracking_on_first_run(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    todays_financials = replace(FAKE_FINANCIALS, as_of=dt.date.today().isoformat())
+    mock_fetch.return_value = todays_financials
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert "How past signals performed" not in response.text
