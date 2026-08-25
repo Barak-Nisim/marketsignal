@@ -73,6 +73,23 @@ def compute_what_changed(previous: Snapshot, current: Snapshot) -> WhatChanged:
     )
 
 
+def list_recent_tickers(limit: int = 6) -> list[Snapshot]:
+    """Returns the latest snapshot for each researched ticker, most
+    recently modified first. Used for the "recently researched" list on
+    the web UI's /app page."""
+    paths = sorted(
+        _history_dir().glob("*.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    recent = []
+    for path in paths[:limit]:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if raw:
+            recent.append(Snapshot(**raw[-1]))
+    return recent
+
+
 def record_and_diff(result: ScoreResult) -> WhatChanged | None:
     """Appends the current result to that ticker's history and returns a
     diff against the immediately prior run, or None if this is the first

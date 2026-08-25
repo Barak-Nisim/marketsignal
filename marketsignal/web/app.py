@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
-from marketsignal.history import record_and_diff
+from marketsignal.history import list_recent_tickers, record_and_diff
 from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, tier_for_score
@@ -43,11 +43,16 @@ def how_it_works(request: Request):
 
 
 @app.get("/app", response_class=HTMLResponse)
-def app_form(request: Request):
+def app_form(request: Request, ticker: str = "AAPL"):
     return templates.TemplateResponse(
         request,
         "app_form.html",
-        {"ticker": "AAPL", "ai_available": _ai_available(), "error": None},
+        {
+            "ticker": ticker,
+            "ai_available": _ai_available(),
+            "error": None,
+            "recent": list_recent_tickers(),
+        },
     )
 
 

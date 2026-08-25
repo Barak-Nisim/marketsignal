@@ -38,12 +38,34 @@ def test_how_it_works_page_explains_methodology():
     assert "How MarketSignal works" in response.text
 
 
-def test_app_form_shows_ticker_input():
+def test_app_form_shows_ticker_input(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+
     response = client.get("/app")
 
     assert response.status_code == 200
     assert "<form" in response.text
     assert 'name="ticker"' in response.text
+
+
+def test_app_form_shows_no_recent_tickers_when_history_is_empty(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+
+    response = client.get("/app")
+
+    assert "Recently researched" not in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_app_form_lists_recently_researched_tickers_after_a_run(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    client.post("/research", data={"ticker": "AAPL"})
+    response = client.get("/app")
+
+    assert "Recently researched" in response.text
+    assert "/app?ticker=AAPL" in response.text
 
 
 @patch("marketsignal.web.app.fetch_raw_financials")

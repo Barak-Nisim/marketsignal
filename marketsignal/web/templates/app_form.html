@@ -16,6 +16,15 @@
     <input type="text" id="ticker" name="ticker" value="{{ ticker }}" class="ticker-input" autocomplete="off" spellcheck="false">
     <p class="field-caption">Try a well-known one to start: AAPL, MSFT, SPY, VOO.</p>
 
+    {% if recent %}
+    <div class="recent-tickers">
+      <span class="recent-label">Recently researched</span>
+      {% for snap in recent %}
+      <a href="/app?ticker={{ snap.ticker }}" class="recent-chip">{{ snap.ticker }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="controls">
       <label class="checkbox">
         <input type="checkbox" name="use_ai" value="1" {% if not ai_available %}disabled{% endif %}>
