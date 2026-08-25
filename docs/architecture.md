@@ -14,7 +14,7 @@ flowchart LR
     S -.optional, --no-ai skips this.-> N[ai/narrator.py]
     N -.Claude API.-> C[(Claude)]
     C -.structured JSON.-> N
-    N -.adds thesis + confidence + risks.-> R
+    N -.adds bull/bear thesis + confidence + risks.-> R
 
     H -.persists to.-> HIST[(~/.marketsignal/history/)]
 ```

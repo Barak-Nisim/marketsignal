@@ -2,10 +2,12 @@
 
 The prompt hands the model a JSON payload derived entirely from the
 deterministic ScoreResult (and, if available, the what-changed diff) and
-asks it to synthesize that into a reasoned thesis. It is explicitly told
-not to recompute scores, not to invent metrics, and not to issue a direct
-Buy/Hold/Sell recommendation -- MarketSignal's design choice is an
-analytical signal plus reasoning, not a directive.
+asks it to synthesize that into a structured investment thesis: a bull
+case, a bear case, catalysts, risk factors, and what would change the
+reader's mind. It is explicitly told not to recompute scores, not to
+invent metrics, and not to issue a direct Buy/Hold/Sell recommendation --
+MarketSignal's design choice is an analytical signal plus reasoning, not
+a directive.
 """
 
 from __future__ import annotations
@@ -21,10 +23,12 @@ SYSTEM_PROMPT = (
     "score, five category scores (Valuation, Growth, Profitability, Financial "
     "Health, Momentum), and the underlying metric values, each scored 0-4 "
     "(Weak to Strong) against fixed, transparent thresholds. "
-    "Write a reasoned thesis synthesizing this data. Do not recompute or "
-    "second-guess the scores, and do not invent metrics that are not in the "
-    "input. Do not issue a Buy, Hold, or Sell recommendation; describe what "
-    "the data shows and let the reader draw their own conclusion."
+    "Write a structured bull case and bear case grounded in this data. Do not "
+    "recompute or second-guess the scores, and do not invent metrics that are "
+    "not in the input. Do not issue a Buy, Hold, or Sell recommendation; "
+    "describe what the data shows on both sides and let the reader draw their "
+    "own conclusion. The bear case should be genuinely argued, not a token "
+    "counterpoint -- if the data supports real concerns, say so plainly."
 )
 
 
@@ -64,18 +68,27 @@ def build_user_prompt(result: ScoreResult, what_changed: WhatChanged | None) -> 
         "Here is the scored research data, as JSON:\n\n"
         f"{json.dumps(payload, indent=2)}\n\n"
         "Write:\n"
-        "1. A reasoned thesis (about 150-200 words) synthesizing the category "
-        "scores into a coherent picture of where this company stands, in plain "
-        "language.\n"
-        "2. A confidence level (Low, Medium, or High) reflecting how much the "
+        "1. A 'bull_case' (about 80-120 words): the strongest case for this "
+        "being a good investment right now, grounded in the data.\n"
+        "2. A 'bear_case' (about 80-120 words): the strongest case against it, "
+        "equally grounded in the data. Do not soften this to be agreeable.\n"
+        "3. A confidence level (Low, Medium, or High) reflecting how much the "
         "signals agree with each other and how complete the underlying data is, "
         "not a market-timing call.\n"
-        "3. 2-4 'key_evidence' entries: the category or metric names (exactly as "
+        "4. 2-4 'key_evidence' entries: the category or metric names (exactly as "
         "given in the input, e.g. 'Valuation' or 'Financial Health: Debt to "
-        "Equity') that most heavily inform your thesis. Every conclusion should "
+        "Equity') that most heavily inform both cases. Every conclusion should "
         "be traceable back to specific data, not general impressions.\n"
-        "4. 2-4 key risk factors, each an object with 'factor' (the risk itself) "
-        "and 'based_on' (the specific category or metric name, exactly as given "
-        "in the input, that grounds it). Do not write a risk factor that isn't "
-        "traceable to a specific signal in the data."
+        "5. 2-4 'catalysts': specific, concrete events or data points that "
+        "could meaningfully move this signal in the near future (e.g. an "
+        "upcoming earnings report, a metric approaching a threshold). Ground "
+        "these in what's actually knowable from the data, not speculation "
+        "about unannounced events.\n"
+        "6. 2-4 key risk factors, each an object with 'factor' (the risk "
+        "itself) and 'based_on' (the specific category or metric name, exactly "
+        "as given in the input, that grounds it). Do not write a risk factor "
+        "that isn't traceable to a specific signal in the data.\n"
+        "7. 2-3 'what_would_change_my_mind' entries: specific, falsifiable "
+        "conditions that would flip this view (e.g. 'if revenue growth turns "
+        "negative next quarter'), not vague hedges."
     )

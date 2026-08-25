@@ -95,9 +95,17 @@
   {% endfor %}
 
   {% if ai_narrative %}
-  <h3>Thesis</h3>
+  <h3>Investment thesis</h3>
   <p><strong>Confidence:</strong> {{ ai_narrative.confidence }}</p>
-  <p>{{ ai_narrative.thesis }}</p>
+
+  <div class="thesis-case thesis-bull">
+    <h4>Bull case</h4>
+    <p>{{ ai_narrative.bull_case }}</p>
+  </div>
+  <div class="thesis-case thesis-bear">
+    <h4>Bear case</h4>
+    <p>{{ ai_narrative.bear_case }}</p>
+  </div>
 
   {% if ai_narrative.key_evidence %}
   <p class="evidence-tags">
@@ -106,11 +114,29 @@
   </p>
   {% endif %}
 
+  {% if ai_narrative.catalysts %}
+  <h4>Catalysts to watch</h4>
+  <ul>
+    {% for catalyst in ai_narrative.catalysts %}
+    <li>{{ catalyst }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   {% if ai_narrative.risk_factors %}
   <h4>Key risk factors</h4>
   <ul>
     {% for risk in ai_narrative.risk_factors %}
     <li>{{ risk.factor }} <span class="evidence-tag">{{ risk.based_on }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if ai_narrative.what_would_change_my_mind %}
+  <h4>What would change this view</h4>
+  <ul>
+    {% for item in ai_narrative.what_would_change_my_mind %}
+    <li>{{ item }}</li>
     {% endfor %}
   </ul>
   {% endif %}

@@ -11,12 +11,18 @@ from marketsignal.models import RawFinancials, WhatChanged
 from marketsignal.scoring import score_financials
 
 FAKE_NARRATIVE = {
-    "thesis": "Growth and profitability are strong, but valuation looks stretched.",
+    "bull_case": "Growth and profitability are strong, with margins well above peers.",
+    "bear_case": "Valuation looks stretched relative to the growth rate.",
     "confidence": "Medium",
     "key_evidence": ["Valuation", "Growth"],
+    "catalysts": ["Next quarterly earnings report", "Revenue growth trend continuing or reversing"],
     "risk_factors": [
         {"factor": "Elevated valuation multiples", "based_on": "Valuation: Trailing P/E"},
         {"factor": "Slowing revenue growth", "based_on": "Growth: Revenue Growth"},
+    ],
+    "what_would_change_my_mind": [
+        "If revenue growth turns negative next quarter",
+        "If margins compress below sector average",
     ],
 }
 
@@ -64,8 +70,12 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
     assert kwargs["model"] == "claude-opus-4-8"
     assert kwargs["output_config"]["format"]["type"] == "json_schema"
     schema = kwargs["output_config"]["format"]["schema"]
+    assert "bull_case" in schema["required"]
+    assert "bear_case" in schema["required"]
     assert "confidence" in schema["required"]
     assert "key_evidence" in schema["required"]
+    assert "catalysts" in schema["required"]
+    assert "what_would_change_my_mind" in schema["required"]
     risk_factor_schema = schema["properties"]["risk_factors"]["items"]
     assert set(risk_factor_schema["required"]) == {"factor", "based_on"}
 

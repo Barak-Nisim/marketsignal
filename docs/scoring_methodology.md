@@ -67,6 +67,6 @@ Category score = simple average of its available metric scores. Overall score = 
 
 ## What the AI layer does and doesn't do
 
-The AI narrator (`ai/narrator.py`) receives the fully-computed `ScoreResult` (and the `WhatChanged` diff, if one exists) as structured JSON and is explicitly instructed to write a reasoned thesis, a confidence level, and risk factors, not to recompute or second-guess the scores, and not to issue a Buy, Hold, or Sell recommendation. If a threshold above seems wrong for a given ticker, the fix is in this table, not in the AI layer.
+The AI narrator (`ai/narrator.py`) receives the fully-computed `ScoreResult` (and the `WhatChanged` diff, if one exists) as structured JSON and is explicitly instructed to write a bull case, a bear case, a confidence level, catalysts to watch, risk factors (each traceable to a specific category or metric), and what would change the reader's mind, not to recompute or second-guess the scores, and not to issue a Buy, Hold, or Sell recommendation. If a threshold above seems wrong for a given ticker, the fix is in this table, not in the AI layer.
 
 **This is not financial advice.** MarketSignal shows deterministic signals computed from public market data and, optionally, AI-written reasoning about them. It does not know your portfolio, risk tolerance, or time horizon, and it does not recommend buying or selling anything.

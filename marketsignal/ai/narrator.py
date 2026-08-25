@@ -1,5 +1,6 @@
-"""Calls the Claude API to synthesize a ScoreResult into a reasoned thesis,
-confidence level, and risk factors.
+"""Calls the Claude API to synthesize a ScoreResult into a structured
+investment thesis: a bull case, a bear case, confidence, catalysts, risk
+factors, and what would change the reader's mind.
 
 This module never recomputes or overrides scores -- it only narrates the
 deterministic output of marketsignal.scoring. Requires ANTHROPIC_API_KEY
@@ -22,9 +23,14 @@ MODEL = "claude-opus-4-8"
 OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
-        "thesis": {"type": "string"},
+        "bull_case": {"type": "string"},
+        "bear_case": {"type": "string"},
         "confidence": {"type": "string", "enum": ["Low", "Medium", "High"]},
         "key_evidence": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "catalysts": {
             "type": "array",
             "items": {"type": "string"},
         },
@@ -40,8 +46,20 @@ OUTPUT_SCHEMA = {
                 "additionalProperties": False,
             },
         },
+        "what_would_change_my_mind": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
     },
-    "required": ["thesis", "confidence", "key_evidence", "risk_factors"],
+    "required": [
+        "bull_case",
+        "bear_case",
+        "confidence",
+        "key_evidence",
+        "catalysts",
+        "risk_factors",
+        "what_would_change_my_mind",
+    ],
     "additionalProperties": False,
 }
 
