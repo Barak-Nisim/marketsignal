@@ -505,6 +505,10 @@ dl.meta dd { margin: 0; }
 .what-changed-box h3 { margin-top: 0; }
 .what-changed-box ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
 
+.thesis-delta-label { margin: 0.75rem 0 0; }
+.thesis-delta-added { color: #166534; }
+.thesis-delta-removed { color: #dc2626; }
+
 .thesis-case {
   border-left: 3px solid var(--border);
   padding: 0.25rem 0 0.25rem 1rem;

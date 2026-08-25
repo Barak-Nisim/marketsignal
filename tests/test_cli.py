@@ -105,6 +105,41 @@ def test_research_omits_outcome_tracking_on_first_run(mock_fetch, capsys, monkey
     assert "How past signals performed" not in captured.out
 
 
+@patch("marketsignal.ai.narrator.generate_narrative")
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_shows_thesis_delta_on_second_ai_run(
+    mock_fetch, mock_narrate, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path / "thesis"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    def _narrative(catalyst):
+        return {
+            "bull_case": "Strong growth.",
+            "bear_case": "Rich valuation.",
+            "confidence": "Medium",
+            "key_evidence": ["Valuation"],
+            "catalysts": [{"catalyst": catalyst, "claim_type": "Fact", "based_on": "Growth"}],
+            "risk_factors": [
+                {"factor": "High P/E", "claim_type": "Fact", "based_on": "Valuation"}
+            ],
+            "what_would_change_my_mind": ["If revenue growth turns negative"],
+        }
+
+    mock_narrate.return_value = _narrative("Earnings report")
+    main(["research", "AAPL"])
+
+    mock_narrate.return_value = _narrative("Product launch")
+    exit_code = main(["research", "AAPL"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "What changed in the thesis since 2026-01-01" in captured.out
+    assert "(new) Product launch" in captured.out
+    assert "(dropped) Earnings report" in captured.out
+
+
 def test_favorites_list_when_empty(capsys, monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path))
 

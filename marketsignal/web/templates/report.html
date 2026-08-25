@@ -116,6 +116,34 @@
   </table>
   {% endfor %}
 
+  {% if thesis_delta %}
+  <div class="what-changed-box thesis-delta-box">
+    <h3>What changed in the thesis since {{ thesis_delta.previous_as_of }}</h3>
+    {% if thesis_delta.confidence_before != thesis_delta.confidence_after %}
+    <p>Confidence: {{ thesis_delta.confidence_before }} &rarr; {{ thesis_delta.confidence_after }}</p>
+    {% endif %}
+    {% for label, added, removed in [
+      ("Catalysts", thesis_delta.catalysts_added, thesis_delta.catalysts_removed),
+      ("Risk factors", thesis_delta.risks_added, thesis_delta.risks_removed),
+      ("What would change this view", thesis_delta.invalidation_added, thesis_delta.invalidation_removed),
+    ] %}
+      {% if added or removed %}
+      <p class="thesis-delta-label"><strong>{{ label }}:</strong></p>
+      <ul>
+        {% for item in added %}<li class="thesis-delta-added">+ {{ item }}</li>{% endfor %}
+        {% for item in removed %}<li class="thesis-delta-removed">&minus; {{ item }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    {% endfor %}
+    {% if thesis_delta.confidence_before == thesis_delta.confidence_after
+        and not (thesis_delta.catalysts_added or thesis_delta.catalysts_removed
+        or thesis_delta.risks_added or thesis_delta.risks_removed
+        or thesis_delta.invalidation_added or thesis_delta.invalidation_removed) %}
+    <p>No change in catalysts, risk factors, or confidence since the last thesis.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if ai_narrative %}
   <h3>Investment thesis</h3>
   <p><strong>Confidence:</strong> {{ ai_narrative.confidence }}</p>

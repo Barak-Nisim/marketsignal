@@ -94,3 +94,22 @@ class WhatChanged:
     previous_as_of: str
     overall_score_delta: float | None
     category_deltas: dict[str, float | None]
+
+
+@dataclass(frozen=True)
+class ThesisDelta:
+    """A deterministic diff between two AI-generated theses for the same
+    ticker: what was added or dropped, not a re-narrated comparison. No AI
+    call is involved in producing this -- it's a set comparison over the
+    structured catalysts/risk_factors/what_would_change_my_mind fields
+    already in the narrator's output."""
+
+    previous_as_of: str
+    confidence_before: str
+    confidence_after: str
+    catalysts_added: tuple[str, ...]
+    catalysts_removed: tuple[str, ...]
+    risks_added: tuple[str, ...]
+    risks_removed: tuple[str, ...]
+    invalidation_added: tuple[str, ...]
+    invalidation_removed: tuple[str, ...]

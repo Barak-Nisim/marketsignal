@@ -59,6 +59,8 @@ Not originally on this list, added as they were built:
 31. **[Shipped]** Investment thesis builder: the AI thesis restructured from one free-form paragraph into bull_case / bear_case / catalysts / risk_factors (each with a `based_on` evidence tag) / what_would_change_my_mind. See `ai/narrator.py` and `ai/prompts.py`.
 32. **[Shipped]** Outcome tracking: each history snapshot now records price at signal time; the report shows how past signals actually performed (1wk+ / 1mo+ / 3mo+) against the current price. See `outcomes.py`.
 33. **[Shipped]** Favorites list with per-ticker trend on `/app` (a lighter-weight version of #8's watchlist idea, not the full digest-mode version).
+34. **[Shipped]** Evidence & Provenance: catalysts and risk factors are each tagged `Fact` / `Inference` / `Opinion` in the structured output, rendered as colored badges on the report. Also fixed `report/markdown.py`, which had gone stale against the bull/bear schema and was silently dropping the thesis from CLI output. See `ai/narrator.py`.
+35. **[Shipped]** Thesis tracking over time: each AI thesis is now persisted to `~/.marketsignal/thesis_history/<TICKER>.json`, and the next research run shows what was added or dropped (catalysts, risk factors, invalidation conditions, confidence) versus the prior thesis. The diff is a deterministic set comparison over the structured fields, not a re-narrated prose comparison -- narrating "revenue outlook strengthened" in words would need its own AI call, which was deliberately left out to keep this addition free. See `thesis_history.py`.
 
 ## Bigger bets (real architecture decisions, plan formally before building)
 
@@ -66,9 +68,7 @@ The 2026-08-25 conversation with Barak reframed MarketSignal from "an AI stock r
 
 **Sequence 1 -- next up, cheap, no new infra:**
 
-34. **[Moderate]** Evidence & Provenance: split each AI claim into Fact / Inference / Model Opinion instead of the current flat evidence tags. Extends the existing single structured-output call (schema change), does not add a new AI call. The strongest, cheapest idea in the v2 vision -- build this first.
-35. **[Major]** Thesis tracking over time: persist each AI-generated thesis (not just the deterministic score snapshot), and on a later run, show what specifically changed in the narrative ("revenue outlook strengthened," "new regulatory risk emerged") instead of only the score delta. Needs a new persistence store for thesis history, separate from `history.py`'s score-only snapshots.
-36. **[Moderate]** "What would change my mind" invalidation checking: on the next manual research run for a ticker (not a live/scheduled monitor -- consistent with the standing no-live-deploy decision), check the current data against the invalidation conditions stored from the prior thesis and flag which ones tripped.
+36. **[Moderate]** "What would change my mind" invalidation checking: on the next manual research run for a ticker (not a live/scheduled monitor -- consistent with the standing no-live-deploy decision), check the current data against the invalidation conditions stored from the prior thesis (now available via `thesis_history.py`, shipped as #35) and flag which ones tripped.
 37. **[Minor]** Investment Journal: a persisted, user-authored note attached to a ticker (your own reasoning, not AI-generated), surfaced on later visits alongside how the thesis has since moved.
 
 **Sequence 2 -- larger, needs a prerequisite or an explicit go-ahead first:**

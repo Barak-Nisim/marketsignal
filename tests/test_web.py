@@ -222,3 +222,41 @@ def test_research_omits_outcome_tracking_on_first_run(mock_fetch, monkeypatch, t
 
     assert response.status_code == 200
     assert "How past signals performed" not in response.text
+
+
+@patch("marketsignal.ai.narrator.generate_narrative")
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_shows_thesis_delta_on_second_ai_run(
+    mock_fetch, mock_narrate, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path / "thesis"))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "fake-key-for-test")
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    def _narrative(catalyst):
+        return {
+            "bull_case": "Strong growth.",
+            "bear_case": "Rich valuation.",
+            "confidence": "Medium",
+            "key_evidence": ["Valuation"],
+            "catalysts": [{"catalyst": catalyst, "claim_type": "Fact", "based_on": "Growth"}],
+            "risk_factors": [
+                {"factor": "High P/E", "claim_type": "Fact", "based_on": "Valuation"}
+            ],
+            "what_would_change_my_mind": ["If revenue growth turns negative"],
+        }
+
+    mock_narrate.return_value = _narrative("Earnings report")
+    client.post("/research", data={"ticker": "AAPL", "use_ai": "1"})
+
+    mock_narrate.return_value = _narrative("Product launch")
+    response = client.post("/research", data={"ticker": "AAPL", "use_ai": "1"})
+
+    assert response.status_code == 200
+    assert "What changed in the thesis since 2026-01-01" in response.text
+    assert "Product launch" in response.text
+    assert "Earnings report" in response.text
+    assert "thesis-delta-added" in response.text
+    assert "thesis-delta-removed" in response.text

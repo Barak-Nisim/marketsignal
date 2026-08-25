@@ -12,6 +12,7 @@ from marketsignal.history import load_history, record_and_diff
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import render
 from marketsignal.scoring import score_financials
+from marketsignal.thesis_history import record_thesis_and_diff
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -59,12 +60,39 @@ def _run_research(args: argparse.Namespace) -> int:
     what_changed = record_and_diff(result)
 
     ai_narrative = None
+    thesis_delta = None
     if not args.no_ai:
         from marketsignal.ai.narrator import generate_narrative
 
         ai_narrative = generate_narrative(result, what_changed)
+        thesis_delta = record_thesis_and_diff(financials.ticker, financials.as_of, ai_narrative)
 
     report = render(result, what_changed=what_changed, ai_narrative=ai_narrative)
+
+    if thesis_delta:
+        report += f"\n\n## What changed in the thesis since {thesis_delta.previous_as_of}\n\n"
+        if thesis_delta.confidence_before != thesis_delta.confidence_after:
+            report += (
+                f"Confidence: {thesis_delta.confidence_before} -> "
+                f"{thesis_delta.confidence_after}\n\n"
+            )
+        for label, added, removed in (
+            ("Catalysts", thesis_delta.catalysts_added, thesis_delta.catalysts_removed),
+            ("Risk factors", thesis_delta.risks_added, thesis_delta.risks_removed),
+            (
+                "What would change this view",
+                thesis_delta.invalidation_added,
+                thesis_delta.invalidation_removed,
+            ),
+        ):
+            if not added and not removed:
+                continue
+            report += f"**{label}:**\n"
+            for item in added:
+                report += f"- (new) {item}\n"
+            for item in removed:
+                report += f"- (dropped) {item}\n"
+            report += "\n"
 
     outcomes = compute_outcomes(load_history(financials.ticker), financials.current_price)
     if outcomes:
