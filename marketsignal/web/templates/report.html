@@ -140,7 +140,10 @@
   <h4>Catalysts to watch</h4>
   <ul>
     {% for catalyst in ai_narrative.catalysts %}
-    <li>{{ catalyst }}</li>
+    <li>{{ catalyst.catalyst }}
+      <span class="claim-type-tag claim-type-{{ catalyst.claim_type|lower }}">{{ catalyst.claim_type }}</span>
+      <span class="evidence-tag">{{ catalyst.based_on }}</span>
+    </li>
     {% endfor %}
   </ul>
   {% endif %}
@@ -149,7 +152,10 @@
   <h4>Key risk factors</h4>
   <ul>
     {% for risk in ai_narrative.risk_factors %}
-    <li>{{ risk.factor }} <span class="evidence-tag">{{ risk.based_on }}</span></li>
+    <li>{{ risk.factor }}
+      <span class="claim-type-tag claim-type-{{ risk.claim_type|lower }}">{{ risk.claim_type }}</span>
+      <span class="evidence-tag">{{ risk.based_on }}</span>
+    </li>
     {% endfor %}
   </ul>
   {% endif %}

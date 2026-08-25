@@ -15,10 +15,29 @@ FAKE_NARRATIVE = {
     "bear_case": "Valuation looks stretched relative to the growth rate.",
     "confidence": "Medium",
     "key_evidence": ["Valuation", "Growth"],
-    "catalysts": ["Next quarterly earnings report", "Revenue growth trend continuing or reversing"],
+    "catalysts": [
+        {
+            "catalyst": "Next quarterly earnings report",
+            "claim_type": "Fact",
+            "based_on": "Growth: Revenue Growth",
+        },
+        {
+            "catalyst": "Revenue growth trend continuing or reversing",
+            "claim_type": "Inference",
+            "based_on": "Growth: Revenue Growth",
+        },
+    ],
     "risk_factors": [
-        {"factor": "Elevated valuation multiples", "based_on": "Valuation: Trailing P/E"},
-        {"factor": "Slowing revenue growth", "based_on": "Growth: Revenue Growth"},
+        {
+            "factor": "Elevated valuation multiples",
+            "claim_type": "Fact",
+            "based_on": "Valuation: Trailing P/E",
+        },
+        {
+            "factor": "Slowing revenue growth could compress the multiple further",
+            "claim_type": "Opinion",
+            "based_on": "Growth: Revenue Growth",
+        },
     ],
     "what_would_change_my_mind": [
         "If revenue growth turns negative next quarter",
@@ -77,7 +96,12 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
     assert "catalysts" in schema["required"]
     assert "what_would_change_my_mind" in schema["required"]
     risk_factor_schema = schema["properties"]["risk_factors"]["items"]
-    assert set(risk_factor_schema["required"]) == {"factor", "based_on"}
+    assert set(risk_factor_schema["required"]) == {"factor", "claim_type", "based_on"}
+    claim_types = ["Fact", "Inference", "Opinion"]
+    assert risk_factor_schema["properties"]["claim_type"]["enum"] == claim_types
+    catalyst_schema = schema["properties"]["catalysts"]["items"]
+    assert set(catalyst_schema["required"]) == {"catalyst", "claim_type", "based_on"}
+    assert catalyst_schema["properties"]["claim_type"]["enum"] == claim_types
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")

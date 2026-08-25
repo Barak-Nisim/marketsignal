@@ -20,6 +20,8 @@ from marketsignal.models import ScoreResult, WhatChanged
 
 MODEL = "claude-opus-4-8"
 
+CLAIM_TYPES = ["Fact", "Inference", "Opinion"]
+
 OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -32,7 +34,16 @@ OUTPUT_SCHEMA = {
         },
         "catalysts": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+                "type": "object",
+                "properties": {
+                    "catalyst": {"type": "string"},
+                    "claim_type": {"type": "string", "enum": CLAIM_TYPES},
+                    "based_on": {"type": "string"},
+                },
+                "required": ["catalyst", "claim_type", "based_on"],
+                "additionalProperties": False,
+            },
         },
         "risk_factors": {
             "type": "array",
@@ -40,9 +51,10 @@ OUTPUT_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "factor": {"type": "string"},
+                    "claim_type": {"type": "string", "enum": CLAIM_TYPES},
                     "based_on": {"type": "string"},
                 },
-                "required": ["factor", "based_on"],
+                "required": ["factor", "claim_type", "based_on"],
                 "additionalProperties": False,
             },
         },

@@ -66,13 +66,39 @@ def test_render_includes_what_changed_section():
 
 def test_render_includes_ai_thesis_when_provided():
     ai_narrative = {
-        "thesis": "Growth is steady but valuation looks stretched relative to peers.",
+        "bull_case": "Growth is steady and margins are healthy.",
+        "bear_case": "Valuation looks stretched relative to peers.",
         "confidence": "Medium",
-        "risk_factors": ["Elevated valuation multiples", "Slowing revenue growth"],
+        "key_evidence": ["Valuation", "Growth"],
+        "catalysts": [
+            {
+                "catalyst": "Next earnings report",
+                "claim_type": "Fact",
+                "based_on": "Growth",
+            }
+        ],
+        "risk_factors": [
+            {
+                "factor": "Elevated valuation multiples",
+                "claim_type": "Fact",
+                "based_on": "Valuation",
+            },
+            {
+                "factor": "Slowing revenue growth",
+                "claim_type": "Inference",
+                "based_on": "Growth",
+            },
+        ],
+        "what_would_change_my_mind": ["If revenue growth turns negative"],
     }
 
     report = render(_sample_result(), ai_narrative=ai_narrative)
 
     assert "## Thesis" in report
     assert "Medium" in report
-    assert "Elevated valuation multiples" in report
+    assert "Growth is steady and margins are healthy." in report
+    assert "Valuation looks stretched relative to peers." in report
+    assert "Elevated valuation multiples [Fact, based on Valuation]" in report
+    assert "Slowing revenue growth [Inference, based on Growth]" in report
+    assert "Next earnings report [Fact, based on Growth]" in report
+    assert "If revenue growth turns negative" in report

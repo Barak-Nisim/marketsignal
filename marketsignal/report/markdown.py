@@ -90,15 +90,47 @@ def render(
         lines.append("")
         lines.append(f"**Confidence:** {ai_narrative.get('confidence', 'n/a')}")
         lines.append("")
-        lines.append(ai_narrative.get("thesis", "").strip())
+        lines.append("### Bull case")
         lines.append("")
+        lines.append(ai_narrative.get("bull_case", "").strip())
+        lines.append("")
+        lines.append("### Bear case")
+        lines.append("")
+        lines.append(ai_narrative.get("bear_case", "").strip())
+        lines.append("")
+
+        evidence = ai_narrative.get("key_evidence", [])
+        if evidence:
+            lines.append(f"**Key evidence:** {', '.join(evidence)}")
+            lines.append("")
+
+        catalysts = ai_narrative.get("catalysts", [])
+        if catalysts:
+            lines.append("### Catalysts to watch")
+            lines.append("")
+            for catalyst in catalysts:
+                lines.append(
+                    f"- {catalyst['catalyst']} "
+                    f"[{catalyst['claim_type']}, based on {catalyst['based_on']}]"
+                )
+            lines.append("")
 
         risks = ai_narrative.get("risk_factors", [])
         if risks:
             lines.append("### Key risk factors")
             lines.append("")
             for risk in risks:
-                lines.append(f"- {risk}")
+                lines.append(
+                    f"- {risk['factor']} [{risk['claim_type']}, based on {risk['based_on']}]"
+                )
+            lines.append("")
+
+        change_mind = ai_narrative.get("what_would_change_my_mind", [])
+        if change_mind:
+            lines.append("### What would change this view")
+            lines.append("")
+            for item in change_mind:
+                lines.append(f"- {item}")
             lines.append("")
 
     return "\n".join(lines)
