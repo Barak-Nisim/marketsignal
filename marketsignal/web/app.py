@@ -23,7 +23,7 @@ from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, tier_for_score
-from marketsignal.thesis_history import record_thesis_and_diff
+from marketsignal.thesis_history import previous_invalidation_conditions, record_thesis_and_diff
 
 WEB_DIR = Path(__file__).parent
 TREND_WINDOW = 10  # most recent research runs shown in a trend sparkline
@@ -114,7 +114,8 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
     if use_ai and _ai_available():
         from marketsignal.ai.narrator import generate_narrative
 
-        ai_narrative = generate_narrative(result, what_changed)
+        prior_conditions = previous_invalidation_conditions(financials.ticker)
+        ai_narrative = generate_narrative(result, what_changed, prior_conditions)
         thesis_delta = record_thesis_and_diff(financials.ticker, financials.as_of, ai_narrative)
 
     full_history = load_history(financials.ticker)

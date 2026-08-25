@@ -40,7 +40,11 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_payload(result: ScoreResult, what_changed: WhatChanged | None) -> dict:
+def build_payload(
+    result: ScoreResult,
+    what_changed: WhatChanged | None,
+    previous_invalidation_conditions: list[str] | None = None,
+) -> dict:
     f = result.financials
     payload = {
         "ticker": f.ticker,
@@ -67,11 +71,30 @@ def build_payload(result: ScoreResult, what_changed: WhatChanged | None) -> dict
             "overall_score_delta": what_changed.overall_score_delta,
             "category_deltas": what_changed.category_deltas,
         }
+    if previous_invalidation_conditions:
+        payload["previous_invalidation_conditions"] = previous_invalidation_conditions
     return payload
 
 
-def build_user_prompt(result: ScoreResult, what_changed: WhatChanged | None) -> str:
-    payload = build_payload(result, what_changed)
+def build_user_prompt(
+    result: ScoreResult,
+    what_changed: WhatChanged | None,
+    previous_invalidation_conditions: list[str] | None = None,
+) -> str:
+    payload = build_payload(result, what_changed, previous_invalidation_conditions)
+    invalidation_instruction = (
+        "8. An 'invalidation_check': if 'previous_invalidation_conditions' is "
+        "present in the input, evaluate each one against the current data and "
+        "return one object per condition with 'condition' (copied exactly), "
+        "'status' (Triggered if the current data now shows that condition to "
+        "be true, Not triggered if it clearly hasn't happened, Unclear if the "
+        "data doesn't let you tell), and a one-sentence 'explanation' citing "
+        "the specific data that supports the status. If "
+        "'previous_invalidation_conditions' is absent, return an empty list."
+        if previous_invalidation_conditions
+        else "8. An 'invalidation_check': return an empty list, since there is "
+        "no prior thesis for this ticker to check against yet."
+    )
     return (
         "Here is the scored research data, as JSON:\n\n"
         f"{json.dumps(payload, indent=2)}\n\n"
@@ -102,5 +125,6 @@ def build_user_prompt(result: ScoreResult, what_changed: WhatChanged | None) -> 
         "risk factor that isn't traceable to a specific signal in the data.\n"
         "7. 2-3 'what_would_change_my_mind' entries: specific, falsifiable "
         "conditions that would flip this view (e.g. 'if revenue growth turns "
-        "negative next quarter'), not vague hedges."
+        "negative next quarter'), not vague hedges.\n"
+        f"{invalidation_instruction}"
     )

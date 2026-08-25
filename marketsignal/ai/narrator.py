@@ -62,6 +62,22 @@ OUTPUT_SCHEMA = {
             "type": "array",
             "items": {"type": "string"},
         },
+        "invalidation_check": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "condition": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": ["Triggered", "Not triggered", "Unclear"],
+                    },
+                    "explanation": {"type": "string"},
+                },
+                "required": ["condition", "status", "explanation"],
+                "additionalProperties": False,
+            },
+        },
     },
     "required": [
         "bull_case",
@@ -71,12 +87,17 @@ OUTPUT_SCHEMA = {
         "catalysts",
         "risk_factors",
         "what_would_change_my_mind",
+        "invalidation_check",
     ],
     "additionalProperties": False,
 }
 
 
-def generate_narrative(result: ScoreResult, what_changed: WhatChanged | None = None) -> dict:
+def generate_narrative(
+    result: ScoreResult,
+    what_changed: WhatChanged | None = None,
+    previous_invalidation_conditions: list[str] | None = None,
+) -> dict:
     load_dotenv()
     client = anthropic.Anthropic()
 
@@ -84,7 +105,14 @@ def generate_narrative(result: ScoreResult, what_changed: WhatChanged | None = N
         model=MODEL,
         max_tokens=4096,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": build_user_prompt(result, what_changed)}],
+        messages=[
+            {
+                "role": "user",
+                "content": build_user_prompt(
+                    result, what_changed, previous_invalidation_conditions
+                ),
+            }
+        ],
         output_config={"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
     )
 

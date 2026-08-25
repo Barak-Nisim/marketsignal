@@ -42,6 +42,18 @@ def load_thesis_history(ticker: str) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def previous_invalidation_conditions(ticker: str) -> list[str]:
+    """The most recently recorded thesis's what_would_change_my_mind list for
+    this ticker, or [] if there's no prior thesis. Fetched before generating
+    a new narrative so the AI call can check whether those conditions have
+    since come true against the current data, in the same request -- no
+    separate monitoring process, no extra API call."""
+    history = load_thesis_history(ticker)
+    if not history:
+        return []
+    return history[-1]["narrative"].get("what_would_change_my_mind", [])
+
+
 def _save_thesis_history(ticker: str, entries: list[dict]) -> None:
     path = _thesis_path(ticker)
     path.write_text(json.dumps(entries, indent=2), encoding="utf-8")

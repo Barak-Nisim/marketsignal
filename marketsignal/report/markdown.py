@@ -133,4 +133,15 @@ def render(
                 lines.append(f"- {item}")
             lines.append("")
 
+        invalidation_check = ai_narrative.get("invalidation_check", [])
+        if invalidation_check:
+            lines.append("### Invalidation check (conditions from the last thesis)")
+            lines.append("")
+            for check in invalidation_check:
+                lines.append(
+                    f"- **{check['status']}** -- {check['condition']} "
+                    f"({check['explanation']})"
+                )
+            lines.append("")
+
     return "\n".join(lines)

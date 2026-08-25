@@ -1,6 +1,7 @@
 from marketsignal.thesis_history import (
     build_thesis_delta,
     load_thesis_history,
+    previous_invalidation_conditions,
     record_thesis_and_diff,
 )
 
@@ -91,3 +92,17 @@ def test_thesis_history_is_isolated_from_real_user_home(monkeypatch, tmp_path):
     record_thesis_and_diff("MSFT", "2026-01-01", _narrative())
 
     assert (tmp_path / "MSFT.json").exists()
+
+
+def test_previous_invalidation_conditions_empty_for_unknown_ticker(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path))
+
+    assert previous_invalidation_conditions("NOPE") == []
+
+
+def test_previous_invalidation_conditions_returns_most_recent_thesis(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_THESIS_HISTORY_DIR", str(tmp_path))
+    record_thesis_and_diff("AAPL", "2026-01-01", _narrative(invalidation=["Condition A"]))
+    record_thesis_and_diff("AAPL", "2026-02-01", _narrative(invalidation=["Condition B"]))
+
+    assert previous_invalidation_conditions("AAPL") == ["Condition B"]

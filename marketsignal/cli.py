@@ -12,7 +12,7 @@ from marketsignal.history import load_history, record_and_diff
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.report.markdown import render
 from marketsignal.scoring import score_financials
-from marketsignal.thesis_history import record_thesis_and_diff
+from marketsignal.thesis_history import previous_invalidation_conditions, record_thesis_and_diff
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -64,7 +64,8 @@ def _run_research(args: argparse.Namespace) -> int:
     if not args.no_ai:
         from marketsignal.ai.narrator import generate_narrative
 
-        ai_narrative = generate_narrative(result, what_changed)
+        prior_conditions = previous_invalidation_conditions(financials.ticker)
+        ai_narrative = generate_narrative(result, what_changed, prior_conditions)
         thesis_delta = record_thesis_and_diff(financials.ticker, financials.as_of, ai_narrative)
 
     report = render(result, what_changed=what_changed, ai_narrative=ai_narrative)

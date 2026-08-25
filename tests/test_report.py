@@ -90,6 +90,13 @@ def test_render_includes_ai_thesis_when_provided():
             },
         ],
         "what_would_change_my_mind": ["If revenue growth turns negative"],
+        "invalidation_check": [
+            {
+                "condition": "If revenue growth turns negative",
+                "status": "Not triggered",
+                "explanation": "Revenue growth is still 8% year over year.",
+            }
+        ],
     }
 
     report = render(_sample_result(), ai_narrative=ai_narrative)
@@ -102,3 +109,5 @@ def test_render_includes_ai_thesis_when_provided():
     assert "Slowing revenue growth [Inference, based on Growth]" in report
     assert "Next earnings report [Fact, based on Growth]" in report
     assert "If revenue growth turns negative" in report
+    assert "**Not triggered** -- If revenue growth turns negative" in report
+    assert "Revenue growth is still 8% year over year." in report

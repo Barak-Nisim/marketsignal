@@ -43,6 +43,7 @@ FAKE_NARRATIVE = {
         "If revenue growth turns negative next quarter",
         "If margins compress below sector average",
     ],
+    "invalidation_check": [],
 }
 
 
@@ -95,6 +96,7 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
     assert "key_evidence" in schema["required"]
     assert "catalysts" in schema["required"]
     assert "what_would_change_my_mind" in schema["required"]
+    assert "invalidation_check" in schema["required"]
     risk_factor_schema = schema["properties"]["risk_factors"]["items"]
     assert set(risk_factor_schema["required"]) == {"factor", "claim_type", "based_on"}
     claim_types = ["Fact", "Inference", "Opinion"]
@@ -102,6 +104,28 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
     catalyst_schema = schema["properties"]["catalysts"]["items"]
     assert set(catalyst_schema["required"]) == {"catalyst", "claim_type", "based_on"}
     assert catalyst_schema["properties"]["claim_type"]["enum"] == claim_types
+    invalidation_schema = schema["properties"]["invalidation_check"]["items"]
+    assert set(invalidation_schema["required"]) == {"condition", "status", "explanation"}
+    assert invalidation_schema["properties"]["status"]["enum"] == [
+        "Triggered",
+        "Not triggered",
+        "Unclear",
+    ]
+
+
+@patch("marketsignal.ai.narrator.anthropic.Anthropic")
+def test_generate_narrative_includes_previous_invalidation_conditions_in_prompt(mock_anthropic):
+    mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
+
+    generate_narrative(
+        _sample_result(),
+        previous_invalidation_conditions=["If revenue growth turns negative"],
+    )
+
+    _, kwargs = mock_anthropic.return_value.messages.create.call_args
+    user_message = kwargs["messages"][0]["content"]
+    assert "If revenue growth turns negative" in user_message
+    assert "previous_invalidation_conditions" in user_message
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")

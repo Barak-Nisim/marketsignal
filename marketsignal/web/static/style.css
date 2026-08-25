@@ -509,6 +509,22 @@ dl.meta dd { margin: 0; }
 .thesis-delta-added { color: #166534; }
 .thesis-delta-removed { color: #dc2626; }
 
+.invalidation-check-box ul { padding-left: 1.2rem; }
+.invalidation-check-box li { margin-bottom: 0.5rem; }
+.invalidation-status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-right: 0.4rem;
+}
+.invalidation-status-triggered { background: #fee2e2; color: #991b1b; }
+.invalidation-status-not-triggered { background: #dcfce7; color: #166534; }
+.invalidation-status-unclear { background: #fef3c7; color: #92400e; }
+
 .thesis-case {
   border-left: 3px solid var(--border);
   padding: 0.25rem 0 0.25rem 1rem;

@@ -116,6 +116,22 @@
   </table>
   {% endfor %}
 
+  {% if ai_narrative and ai_narrative.invalidation_check %}
+  <div class="what-changed-box invalidation-check-box">
+    <h3>Invalidation check</h3>
+    <p class="field-caption">Conditions from the last thesis, checked against today's data.</p>
+    <ul>
+      {% for check in ai_narrative.invalidation_check %}
+      <li>
+        <span class="invalidation-status invalidation-status-{{ check.status|lower|replace(' ', '-') }}">{{ check.status }}</span>
+        {{ check.condition }}
+        <span class="field-caption">{{ check.explanation }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   {% if thesis_delta %}
   <div class="what-changed-box thesis-delta-box">
     <h3>What changed in the thesis since {{ thesis_delta.previous_as_of }}</h3>

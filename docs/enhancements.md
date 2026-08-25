@@ -61,6 +61,7 @@ Not originally on this list, added as they were built:
 33. **[Shipped]** Favorites list with per-ticker trend on `/app` (a lighter-weight version of #8's watchlist idea, not the full digest-mode version).
 34. **[Shipped]** Evidence & Provenance: catalysts and risk factors are each tagged `Fact` / `Inference` / `Opinion` in the structured output, rendered as colored badges on the report. Also fixed `report/markdown.py`, which had gone stale against the bull/bear schema and was silently dropping the thesis from CLI output. See `ai/narrator.py`.
 35. **[Shipped]** Thesis tracking over time: each AI thesis is now persisted to `~/.marketsignal/thesis_history/<TICKER>.json`, and the next research run shows what was added or dropped (catalysts, risk factors, invalidation conditions, confidence) versus the prior thesis. The diff is a deterministic set comparison over the structured fields, not a re-narrated prose comparison -- narrating "revenue outlook strengthened" in words would need its own AI call, which was deliberately left out to keep this addition free. See `thesis_history.py`.
+36. **[Shipped]** "What would change my mind" invalidation checking: each research run now passes the prior thesis's invalidation conditions (via `thesis_history.previous_invalidation_conditions`) into the same AI call as extra context, so the model classifies each one Triggered / Not triggered / Unclear against today's data, no separate AI call and no live/scheduled monitor. See the `invalidation_check` field in `ai/narrator.py` and the "Invalidation check" section on the report page.
 
 ## Bigger bets (real architecture decisions, plan formally before building)
 
@@ -68,7 +69,6 @@ The 2026-08-25 conversation with Barak reframed MarketSignal from "an AI stock r
 
 **Sequence 1 -- next up, cheap, no new infra:**
 
-36. **[Moderate]** "What would change my mind" invalidation checking: on the next manual research run for a ticker (not a live/scheduled monitor -- consistent with the standing no-live-deploy decision), check the current data against the invalidation conditions stored from the prior thesis (now available via `thesis_history.py`, shipped as #35) and flag which ones tripped.
 37. **[Minor]** Investment Journal: a persisted, user-authored note attached to a ticker (your own reasoning, not AI-generated), surfaced on later visits alongside how the thesis has since moved.
 
 **Sequence 2 -- larger, needs a prerequisite or an explicit go-ahead first:**
