@@ -24,12 +24,24 @@ OUTPUT_SCHEMA = {
     "properties": {
         "thesis": {"type": "string"},
         "confidence": {"type": "string", "enum": ["Low", "Medium", "High"]},
-        "risk_factors": {
+        "key_evidence": {
             "type": "array",
             "items": {"type": "string"},
         },
+        "risk_factors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "factor": {"type": "string"},
+                    "based_on": {"type": "string"},
+                },
+                "required": ["factor", "based_on"],
+                "additionalProperties": False,
+            },
+        },
     },
-    "required": ["thesis", "confidence", "risk_factors"],
+    "required": ["thesis", "confidence", "key_evidence", "risk_factors"],
     "additionalProperties": False,
 }
 

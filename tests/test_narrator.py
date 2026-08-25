@@ -13,7 +13,11 @@ from marketsignal.scoring import score_financials
 FAKE_NARRATIVE = {
     "thesis": "Growth and profitability are strong, but valuation looks stretched.",
     "confidence": "Medium",
-    "risk_factors": ["Elevated valuation multiples", "Slowing revenue growth"],
+    "key_evidence": ["Valuation", "Growth"],
+    "risk_factors": [
+        {"factor": "Elevated valuation multiples", "based_on": "Valuation: Trailing P/E"},
+        {"factor": "Slowing revenue growth", "based_on": "Growth: Revenue Growth"},
+    ],
 }
 
 
@@ -59,7 +63,11 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
     _, kwargs = mock_anthropic.return_value.messages.create.call_args
     assert kwargs["model"] == "claude-opus-4-8"
     assert kwargs["output_config"]["format"]["type"] == "json_schema"
-    assert "confidence" in kwargs["output_config"]["format"]["schema"]["required"]
+    schema = kwargs["output_config"]["format"]["schema"]
+    assert "confidence" in schema["required"]
+    assert "key_evidence" in schema["required"]
+    risk_factor_schema = schema["properties"]["risk_factors"]["items"]
+    assert set(risk_factor_schema["required"]) == {"factor", "based_on"}
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")

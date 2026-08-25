@@ -70,5 +70,12 @@ def build_user_prompt(result: ScoreResult, what_changed: WhatChanged | None) -> 
         "2. A confidence level (Low, Medium, or High) reflecting how much the "
         "signals agree with each other and how complete the underlying data is, "
         "not a market-timing call.\n"
-        "3. 2-4 key risk factors grounded in the weakest signals in the data."
+        "3. 2-4 'key_evidence' entries: the category or metric names (exactly as "
+        "given in the input, e.g. 'Valuation' or 'Financial Health: Debt to "
+        "Equity') that most heavily inform your thesis. Every conclusion should "
+        "be traceable back to specific data, not general impressions.\n"
+        "4. 2-4 key risk factors, each an object with 'factor' (the risk itself) "
+        "and 'based_on' (the specific category or metric name, exactly as given "
+        "in the input, that grounds it). Do not write a risk factor that isn't "
+        "traceable to a specific signal in the data."
     )

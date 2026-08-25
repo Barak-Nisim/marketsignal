@@ -80,11 +80,18 @@
   <p><strong>Confidence:</strong> {{ ai_narrative.confidence }}</p>
   <p>{{ ai_narrative.thesis }}</p>
 
+  {% if ai_narrative.key_evidence %}
+  <p class="evidence-tags">
+    <strong>Key evidence:</strong>
+    {% for e in ai_narrative.key_evidence %}<span class="evidence-tag">{{ e }}</span>{% endfor %}
+  </p>
+  {% endif %}
+
   {% if ai_narrative.risk_factors %}
   <h4>Key risk factors</h4>
   <ul>
     {% for risk in ai_narrative.risk_factors %}
-    <li>{{ risk }}</li>
+    <li>{{ risk.factor }} <span class="evidence-tag">{{ risk.based_on }}</span></li>
     {% endfor %}
   </ul>
   {% endif %}
