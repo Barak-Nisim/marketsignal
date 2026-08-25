@@ -412,6 +412,57 @@ label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
 }
 .recent-chip:hover { border-color: var(--accent); }
 
+.favorites-panel {
+  background: var(--tint-bg);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.favorite-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+.favorite-row:first-of-type { border-top: none; }
+.favorite-ticker { font-weight: 700; color: var(--accent); text-decoration: none; min-width: 4.5em; }
+.favorite-tier { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
+.favorite-remove-form { margin-left: auto; }
+.favorite-remove-btn {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+}
+.favorite-remove-btn:hover { color: var(--accent); }
+
+.favorite-toggle-form { display: inline-block; margin-bottom: 1rem; }
+.favorite-toggle {
+  background: var(--card-bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.favorite-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.favorite-toggle-active { color: var(--accent-2); border-color: var(--accent-2); }
+
+.trend-box {
+  background: var(--tint-bg);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0 1.5rem;
+}
+.trend-box h3 { margin-top: 0; margin-bottom: 0.6rem; }
+.sparkline { display: block; }
+
 .controls { display: flex; align-items: center; justify-content: space-between; margin-top: 1.2rem; }
 .checkbox { display: flex; align-items: center; gap: 0.4rem; font-weight: normal; }
 .hint { color: var(--muted); font-size: 0.85rem; }

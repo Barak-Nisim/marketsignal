@@ -67,3 +67,36 @@ def test_research_records_history_between_runs(mock_fetch, monkeypatch, tmp_path
 
     # second run should have a prior snapshot to diff against
     assert "What changed since 2026-01-01" in second_run_output.read_text(encoding="utf-8")
+
+
+def test_favorites_list_when_empty(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path))
+
+    exit_code = main(["favorites", "list"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "No favorites yet." in captured.err
+
+
+def test_favorites_add_and_list(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path))
+
+    main(["favorites", "add", "aapl"])
+    exit_code = main(["favorites", "list"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "AAPL" in captured.out
+
+
+def test_favorites_remove(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path))
+    main(["favorites", "add", "AAPL"])
+
+    main(["favorites", "remove", "AAPL"])
+    exit_code = main(["favorites", "list"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "No favorites yet." in captured.err

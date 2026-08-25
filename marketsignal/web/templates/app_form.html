@@ -11,6 +11,27 @@
     <div class="error">{{ error }}</div>
   {% endif %}
 
+  {% if favorites %}
+  <div class="favorites-panel">
+    <span class="recent-label">Favorites</span>
+    {% for fav in favorites %}
+    <div class="favorite-row">
+      <a href="/app?ticker={{ fav.ticker }}" class="favorite-ticker">{{ fav.ticker }}</a>
+      {% if fav.has_history %}
+      <span class="favorite-tier">{{ fav.latest_tier }} ({{ "%.2f"|format(fav.latest_score) }})</span>
+      {{ fav.sparkline|safe }}
+      {% else %}
+      <span class="hint">Not researched yet</span>
+      {% endif %}
+      <form method="post" action="/favorites/remove" class="favorite-remove-form">
+        <input type="hidden" name="ticker" value="{{ fav.ticker }}">
+        <button type="submit" class="favorite-remove-btn" aria-label="Remove {{ fav.ticker }} from favorites">&times;</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <form method="post" action="/research">
     <label for="ticker">Ticker symbol</label>
     <input type="text" id="ticker" name="ticker" value="{{ ticker }}" class="ticker-input" autocomplete="off" spellcheck="false">

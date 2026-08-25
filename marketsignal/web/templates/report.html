@@ -5,6 +5,18 @@
   <p><a href="/app">&larr; Research another ticker</a></p>
   <h1>{{ result.financials.company_name }} ({{ result.financials.ticker }})</h1>
 
+  {% if is_favorite %}
+  <form method="post" action="/favorites/remove" class="favorite-toggle-form">
+    <input type="hidden" name="ticker" value="{{ result.financials.ticker }}">
+    <button type="submit" class="favorite-toggle favorite-toggle-active">&starf; Remove from favorites</button>
+  </form>
+  {% else %}
+  <form method="post" action="/favorites/add" class="favorite-toggle-form">
+    <input type="hidden" name="ticker" value="{{ result.financials.ticker }}">
+    <button type="submit" class="favorite-toggle">&star; Add to favorites</button>
+  </form>
+  {% endif %}
+
   <dl class="meta">
     <dt>Sector</dt><dd>{{ result.financials.sector or "n/a" }} / {{ result.financials.industry or "n/a" }}</dd>
     <dt>As of</dt><dd>{{ result.financials.as_of }}</dd>
@@ -17,6 +29,13 @@
       {% endif %}
     </dd>
   </dl>
+
+  {% if trend_sparkline %}
+  <div class="trend-box">
+    <h3>Signal trend (last {{ trend_count }} research run{{ "s" if trend_count != 1 }})</h3>
+    {{ trend_sparkline|safe }}
+  </div>
+  {% endif %}
 
   {% if what_changed %}
   <div class="what-changed-box">
