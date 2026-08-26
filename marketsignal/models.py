@@ -136,6 +136,31 @@ class AccuracySummary:
 
 
 @dataclass(frozen=True)
+class Portfolio:
+    """A named, persisted list of tickers -- what gets saved to
+    ~/.marketsignal/portfolios/<slug>.json."""
+
+    name: str
+    tickers: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class PortfolioReview:
+    """A deterministic aggregate read across a portfolio's holdings: the
+    same five signals score_financials() already produces, averaged, plus
+    a sector-concentration note. No new scoring model, no AI call, no
+    numeric growth projection -- see docs/enhancements.md for why."""
+
+    portfolio_name: str
+    holdings: tuple[ScoreResult, ...]
+    failed_tickers: tuple[str, ...]
+    overall_score: float | None
+    tier: str | None
+    category_averages: dict[str, float | None]
+    sector_counts: dict[str, int]
+
+
+@dataclass(frozen=True)
 class ThesisDelta:
     """A deterministic diff between two AI-generated theses for the same
     ticker: what was added or dropped, not a re-narrated comparison. No AI
