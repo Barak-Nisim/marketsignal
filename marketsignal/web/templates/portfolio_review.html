@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}MarketSignal: {{ portfolio.name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <p><a href="/portfolios">&larr; All portfolios</a></p>
+  <h1>{{ portfolio.name }}</h1>
+  <p class="subtitle">{{ portfolio.tickers|length }} ticker{{ "s" if portfolio.tickers|length != 1 }} in this portfolio</p>
+
+  {% if review.failed_tickers %}
+  <div class="error">
+    Could not fetch data for: {{ review.failed_tickers|join(", ") }}. Excluded from the review below.
+  </div>
+  {% endif %}
+
+  {% if review.holdings %}
+  <div class="example-panel">
+    <div class="example-panel-header">
+      <div>
+        <p class="example-company">{{ portfolio.name }}</p>
+        <p class="example-ticker">{{ review.holdings|length }} holding{{ "s" if review.holdings|length != 1 }} scored</p>
+      </div>
+      <div class="example-score-block">
+        <p class="example-score-label">Portfolio Signal</p>
+        {% if review.overall_score is not none %}
+        <p class="example-score-num">{{ "%.2f"|format(review.overall_score) }} / 4.0</p>
+        <p class="example-score-tier">{{ review.tier }}</p>
+        {% else %}
+        <p class="example-score-num">n/a</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if review.category_averages %}
+    <div class="example-dimensions">
+      {% for category_id, avg in review.category_averages.items() %}
+      <div class="example-dim">
+        <span class="example-dim-label">{{ category_id.replace("_", " ")|title }}</span>
+        {% if avg is not none %}
+        <span class="example-dim-value value-{{ signal_bucket(avg) }}">{{ tier_for_score(avg) }}</span>
+        <span class="example-dim-bar"><span class="example-dim-fill fill-{{ signal_bucket(avg) }}" style="width: {{ ((avg / 4) * 100)|int }}%"></span></span>
+        {% else %}
+        <span class="example-dim-value">n/a</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="field-caption">Each category is the average of that signal across all scored holdings; a holding missing a signal (common for ETFs) is excluded from that average rather than treated as zero.</p>
+  </div>
+  {% else %}
+  <p class="field-caption">No tickers could be scored yet.</p>
+  {% endif %}
+
+  {% if review.sector_counts %}
+  <div class="what-changed-box">
+    <h3>Sector concentration</h3>
+    <ul>
+      {% for sector, count in review.sector_counts.items() %}
+      <li>{{ sector }}: {{ count }} ({{ "%.0f"|format(count / (review.holdings|length) * 100) }}%)</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if review.holdings %}
+  <h3>Holdings</h3>
+  <table>
+    <thead><tr><th>Ticker</th><th>Company</th><th>Signal</th><th>Tier</th></tr></thead>
+    <tbody>
+      {% for h in review.holdings %}
+      <tr>
+        <td><a href="/app?ticker={{ h.financials.ticker }}">{{ h.financials.ticker }}</a></td>
+        <td>{{ h.financials.company_name }}</td>
+        <td>{% if h.overall_score is not none %}{{ "%.2f"|format(h.overall_score) }}{% else %}n/a{% endif %}</td>
+        <td>{{ h.tier }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <form method="post" action="/portfolios/{{ portfolio.name|slugify }}/delete" class="favorite-toggle-form">
+    <button type="submit" class="favorite-toggle">Delete this portfolio</button>
+  </form>
+
+  <p class="disclaimer">Not financial advice. This is a deterministic average of the same five signals shown for each ticker; it does not project future returns or recommend buying or selling anything.</p>
+</div>
+{% endblock %}

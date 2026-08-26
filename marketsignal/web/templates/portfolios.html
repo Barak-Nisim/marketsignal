@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}MarketSignal: Portfolios{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Portfolios</h1>
+  <p class="subtitle">Save a named list of tickers and get one deterministic read across the group: the same five signals, averaged, plus a sector-concentration note.</p>
+
+  {% if portfolios %}
+  <div class="favorites-panel">
+    {% for p in portfolios %}
+    <div class="favorite-row">
+      <a href="/portfolios/{{ p.name|slugify }}/review" class="favorite-ticker">{{ p.name }}</a>
+      <span class="favorite-tier">{{ p.tickers|length }} ticker{{ "s" if p.tickers|length != 1 }}: {{ p.tickers|join(", ") }}</span>
+      <form method="post" action="/portfolios/{{ p.name|slugify }}/delete" class="favorite-remove-form">
+        <button type="submit" class="favorite-remove-btn" aria-label="Delete {{ p.name }}">&times;</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="field-caption">No portfolios yet. Create one below.</p>
+  {% endif %}
+
+  <form method="post" action="/portfolios/save">
+    <label for="name">Portfolio name</label>
+    <input type="text" id="name" name="name" class="ticker-input" placeholder="Growth Picks" autocomplete="off" required>
+    <p class="field-caption">Creating a portfolio with an existing name replaces its ticker list.</p>
+
+    <label for="tickers">Tickers</label>
+    <textarea id="tickers" name="tickers" rows="2" placeholder="AAPL, MSFT, AMZN" required></textarea>
+    <p class="field-caption">Comma or space separated. Each research run also updates that ticker's own history, same as researching it directly.</p>
+
+    <div class="controls">
+      <span></span>
+      <button type="submit">Save and review</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

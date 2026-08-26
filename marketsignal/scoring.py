@@ -39,6 +39,18 @@ def tier_for_score(score: float) -> str:
     return "Strong"
 
 
+def signal_bucket(score: float) -> str:
+    """Collapses the five-tier system to three CSS color buckets (strong /
+    average / weak) for compact bar-chart displays, e.g. the portfolio
+    review's category-average bars."""
+    tier = tier_for_score(score)
+    if tier in ("Strong", "Above Average"):
+        return "strong"
+    if tier == "Average":
+        return "average"
+    return "weak"
+
+
 def _band(
     value: float | None, bands: list[tuple[float, int]], *, higher_is_better: bool
 ) -> int | None:

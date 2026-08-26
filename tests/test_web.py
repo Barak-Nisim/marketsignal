@@ -369,3 +369,126 @@ def test_journal_ignores_blank_note(mock_fetch, monkeypatch, tmp_path):
     response = client.post("/research", data={"ticker": "AAPL"})
 
     assert "No notes yet" in response.text
+
+
+FAKE_MSFT = RawFinancials(
+    ticker="MSFT",
+    company_name="Microsoft Corporation",
+    sector="Technology",
+    industry="Software",
+    as_of="2026-01-01",
+    current_price=400,
+    trailing_pe=30,
+    revenue_growth=0.15,
+)
+
+
+def test_portfolios_list_shows_empty_state(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    response = client.get("/portfolios")
+
+    assert response.status_code == 200
+    assert "No portfolios yet" in response.text
+
+
+def test_portfolios_save_redirects_to_review(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    response = client.post(
+        "/portfolios/save",
+        data={"name": "Growth Picks", "tickers": "aapl, msft"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/portfolios/growth-picks/review"
+
+
+def test_portfolios_save_with_blank_tickers_creates_empty_portfolio(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    response = client.post(
+        "/portfolios/save", data={"name": "Empty", "tickers": ""}, follow_redirects=False
+    )
+
+    assert response.status_code == 303  # not a 422 -- tickers is optional, not required
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_portfolio_review_shows_aggregate_and_holdings(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    client.post(
+        "/portfolios/save",
+        data={"name": "Growth Picks", "tickers": "AAPL, MSFT"},
+        follow_redirects=False,
+    )
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+
+    response = client.get("/portfolios/growth-picks/review")
+
+    assert response.status_code == 200
+    assert "Growth Picks" in response.text
+    assert "Apple Inc." in response.text
+    assert "Microsoft Corporation" in response.text
+    assert "Portfolio Signal" in response.text
+    assert "Sector concentration" in response.text
+    assert "Technology: 2 (100%)" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_portfolio_review_handles_one_bad_ticker_without_failing(
+    mock_fetch, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    client.post(
+        "/portfolios/save",
+        data={"name": "Mixed", "tickers": "AAPL BOGUS"},
+        follow_redirects=False,
+    )
+    mock_fetch.side_effect = [FAKE_FINANCIALS, TickerNotFoundError("BOGUS")]
+
+    response = client.get("/portfolios/mixed/review")
+
+    assert response.status_code == 200
+    assert "Could not fetch data for: BOGUS" in response.text
+    assert "Apple Inc." in response.text  # the good ticker still renders
+
+
+def test_portfolio_review_empty_portfolio_shows_graceful_message(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+    client.post(
+        "/portfolios/save", data={"name": "Empty", "tickers": ""}, follow_redirects=False
+    )
+
+    response = client.get("/portfolios/empty/review")
+
+    assert response.status_code == 200
+    assert "No tickers could be scored yet" in response.text
+
+
+def test_portfolio_review_unknown_slug_redirects_to_list(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    response = client.get("/portfolios/does-not-exist/review", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/portfolios"
+
+
+def test_portfolios_delete_removes_it_and_redirects(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+    client.post(
+        "/portfolios/save", data={"name": "Growth Picks", "tickers": "AAPL"},
+        follow_redirects=False,
+    )
+
+    response = client.post("/portfolios/growth-picks/delete", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/portfolios"
+    list_response = client.get("/portfolios")
+    assert "No portfolios yet" in list_response.text
+    assert 'href="/portfolios/growth-picks/review"' not in list_response.text

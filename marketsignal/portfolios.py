@@ -31,24 +31,39 @@ def slugify(name: str) -> str:
     return slug or "portfolio"
 
 
+def _portfolio_path_for_slug(slug: str) -> Path:
+    return _portfolios_dir() / f"{slug}.json"
+
+
 def _portfolio_path(name: str) -> Path:
-    return _portfolios_dir() / f"{slugify(name)}.json"
+    return _portfolio_path_for_slug(slugify(name))
+
+
+def _load(path: Path) -> Portfolio | None:
+    if not path.exists():
+        return None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return Portfolio(name=raw["name"], tickers=tuple(raw["tickers"]))
 
 
 def list_portfolios() -> list[Portfolio]:
     portfolios = []
     for path in sorted(_portfolios_dir().glob("*.json")):
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        portfolios.append(Portfolio(name=raw["name"], tickers=tuple(raw["tickers"])))
+        portfolio = _load(path)
+        if portfolio:
+            portfolios.append(portfolio)
     return portfolios
 
 
 def get_portfolio(name: str) -> Portfolio | None:
-    path = _portfolio_path(name)
-    if not path.exists():
-        return None
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    return Portfolio(name=raw["name"], tickers=tuple(raw["tickers"]))
+    return _load(_portfolio_path(name))
+
+
+def get_portfolio_by_slug(slug: str) -> Portfolio | None:
+    """Looks up a portfolio directly by its URL slug, without needing the
+    human-readable name -- used by web routes, where only the slug (from
+    the URL path) is available."""
+    return _load(_portfolio_path_for_slug(slug))
 
 
 def save_portfolio(name: str, tickers: list[str]) -> Portfolio:
@@ -66,6 +81,10 @@ def save_portfolio(name: str, tickers: list[str]) -> Portfolio:
 
 
 def delete_portfolio(name: str) -> None:
-    path = _portfolio_path(name)
+    delete_portfolio_by_slug(slugify(name))
+
+
+def delete_portfolio_by_slug(slug: str) -> None:
+    path = _portfolio_path_for_slug(slug)
     if path.exists():
         path.unlink()

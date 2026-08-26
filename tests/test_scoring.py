@@ -1,5 +1,5 @@
 from marketsignal.models import RawFinancials
-from marketsignal.scoring import score_financials, tier_for_score
+from marketsignal.scoring import score_financials, signal_bucket, tier_for_score
 
 
 def _base_financials(**overrides) -> RawFinancials:
@@ -148,3 +148,11 @@ def test_tier_for_score_boundaries():
     assert tier_for_score(2.4) == "Above Average"
     assert tier_for_score(3.2) == "Strong"
     assert tier_for_score(4.0) == "Strong"
+
+
+def test_signal_bucket_collapses_five_tiers_to_three():
+    assert signal_bucket(0.0) == "weak"
+    assert signal_bucket(0.8) == "weak"  # Below Average -> weak
+    assert signal_bucket(1.6) == "average"  # Average
+    assert signal_bucket(2.4) == "strong"  # Above Average -> strong
+    assert signal_bucket(4.0) == "strong"  # Strong

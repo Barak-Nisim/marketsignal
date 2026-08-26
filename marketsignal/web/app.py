@@ -8,6 +8,7 @@ uses -- no scoring or narration logic lives here. Run locally with
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
@@ -27,9 +28,17 @@ from marketsignal.history import list_recent_tickers, load_history, record_and_d
 from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.outcomes import compute_outcomes
+from marketsignal.portfolio_review import build_portfolio_review
+from marketsignal.portfolios import (
+    delete_portfolio_by_slug,
+    get_portfolio_by_slug,
+    list_portfolios,
+    save_portfolio,
+    slugify,
+)
 from marketsignal.price_trend import build_price_ranges
 from marketsignal.report.markdown import format_value
-from marketsignal.scoring import score_financials, tier_for_score
+from marketsignal.scoring import score_financials, signal_bucket, tier_for_score
 from marketsignal.thesis_history import (
     load_thesis_history,
     previous_claims,
@@ -42,6 +51,7 @@ TREND_WINDOW = 10  # most recent research runs shown in a trend sparkline
 
 app = FastAPI(title="MarketSignal")
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+templates.env.filters["slugify"] = slugify
 app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
 
@@ -163,5 +173,59 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "outcomes": outcomes,
             "journal_entries": load_journal(financials.ticker),
             "price_ranges": price_ranges,
+        },
+    )
+
+
+@app.get("/portfolios", response_class=HTMLResponse)
+def portfolios_list(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "portfolios.html",
+        {"portfolios": list_portfolios()},
+    )
+
+
+@app.post("/portfolios/save")
+def portfolios_save(name: str = Form(...), tickers: str = Form("")):
+    parsed = [t for t in re.split(r"[,\s]+", tickers.strip()) if t]
+    portfolio = save_portfolio(name, parsed)
+    return RedirectResponse(url=f"/portfolios/{slugify(portfolio.name)}/review", status_code=303)
+
+
+@app.post("/portfolios/{slug}/delete")
+def portfolios_delete(slug: str):
+    delete_portfolio_by_slug(slug)
+    return RedirectResponse(url="/portfolios", status_code=303)
+
+
+@app.get("/portfolios/{slug}/review", response_class=HTMLResponse)
+def portfolio_review_page(request: Request, slug: str):
+    portfolio = get_portfolio_by_slug(slug)
+    if portfolio is None:
+        return RedirectResponse(url="/portfolios", status_code=303)
+
+    results = []
+    failed_tickers = []
+    for ticker in portfolio.tickers:
+        try:
+            financials = fetch_raw_financials(ticker)
+        except TickerNotFoundError:
+            failed_tickers.append(ticker)
+            continue
+        result = score_financials(financials)
+        record_and_diff(result)
+        results.append(result)
+
+    review = build_portfolio_review(portfolio.name, results, failed_tickers)
+
+    return templates.TemplateResponse(
+        request,
+        "portfolio_review.html",
+        {
+            "portfolio": portfolio,
+            "review": review,
+            "tier_for_score": tier_for_score,
+            "signal_bucket": signal_bucket,
         },
     )
