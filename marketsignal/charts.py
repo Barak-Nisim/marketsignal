@@ -9,7 +9,7 @@ from __future__ import annotations
 
 
 def sparkline_svg(
-    values: list[float | None], width: int = 200, height: int = 40, color: str = "#059669"
+    values: list[float | None], width: int = 200, height: int = 40, color: str = "#22e584"
 ) -> str:
     """Renders a simple line sparkline from a list of numeric values, oldest
     first. Returns an empty string if fewer than two usable points exist."""

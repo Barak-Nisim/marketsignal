@@ -17,6 +17,19 @@
   </script>
 </head>
 <body>
+  <div class="ticker-tape" aria-hidden="true">
+    <div class="ticker-track">
+      {% for i in range(2) %}
+      <span class="ticker-item"><span class="ticker-sym">AAPL</span> 2.68/4.0 <span class="ticker-up">&#9650; ABOVE AVERAGE</span></span>
+      <span class="ticker-item"><span class="ticker-sym">MSFT</span> 2.91/4.0 <span class="ticker-up">&#9650; ABOVE AVERAGE</span></span>
+      <span class="ticker-item"><span class="ticker-sym">VTI</span> 2.10/4.0 <span class="ticker-up">&#9650; AVERAGE</span></span>
+      <span class="ticker-item"><span class="ticker-sym">NVDA</span> 3.20/4.0 <span class="ticker-up">&#9650; STRONG</span></span>
+      <span class="ticker-item"><span class="ticker-sym">XYZ</span> 1.34/4.0 <span class="ticker-down">&#9660; BELOW AVERAGE</span></span>
+      <span class="ticker-item"><span class="ticker-sym">KO</span> 2.40/4.0 <span class="ticker-up">&#9650; AVERAGE</span></span>
+      {% endfor %}
+    </div>
+  </div>
+
   <header class="site-nav">
     <a href="/" class="brand">
       <svg class="logo-mark" viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">

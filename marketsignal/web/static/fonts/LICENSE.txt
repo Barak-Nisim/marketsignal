@@ -1,0 +1,16 @@
+Fonts in this directory are self-hosted (no CDN) to keep the app fully
+self-contained, and are used under the SIL Open Font License, Version 1.1:
+https://openfontlicense.org
+
+IBM Plex Mono and IBM Plex Sans by IBM, sourced from Google Fonts
+(https://fonts.google.com/specimen/IBM+Plex+Mono,
+https://fonts.google.com/specimen/IBM+Plex+Sans).
+
+IBM Plex Sans is distributed here as a single variable-weight file
+(plexsans-variable.woff2) covering weights 400-700; IBM Plex Mono ships
+as four separate static-weight files, matching how each family is
+actually served upstream.
+
+Both are redistributable and embeddable under the OFL. No attribution
+is required within the rendered app; this notice is kept here for
+license traceability.

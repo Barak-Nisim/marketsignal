@@ -24,14 +24,16 @@
       <div class="mock-window">
         <div class="mock-titlebar">
           <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+          <span class="mock-titlebar-label">marketsignal</span>
         </div>
         <div class="mock-body">
+          <p class="mock-prompt">$ marketsignal research AAPL<span class="mock-cursor">&#9608;</span></p>
           <p class="mock-org">Apple Inc. (AAPL)</p>
           <p class="mock-score"><span class="score-badge">2.68 / 4.0</span> Above Average</p>
           <ul class="mock-findings">
-            <li><span class="mock-priority mock-priority-strong"></span> Growth: Strong</li>
-            <li><span class="mock-priority mock-priority-strong"></span> Profitability: Strong</li>
-            <li><span class="mock-priority mock-priority-weak"></span> Valuation: Weak</li>
+            <li><span class="mock-bars mock-priority-strong">&#9601;&#9605;&#9608;</span> Growth: Strong</li>
+            <li><span class="mock-bars mock-priority-strong">&#9601;&#9605;&#9608;</span> Profitability: Strong</li>
+            <li><span class="mock-bars mock-priority-weak">&#9608;&#9601;&#9601;</span> Valuation: Weak</li>
           </ul>
         </div>
       </div>
@@ -95,13 +97,13 @@
     </div>
     <div class="matters-graphic" aria-hidden="true">
       <svg viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg">
-        <rect x="10" y="10" width="300" height="240" rx="20" fill="rgba(5,150,105,0.07)"/>
-        <polyline points="40,200 90,160 140,175 190,110 240,90 280,50" fill="none" stroke="#059669" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="280" cy="50" r="7" fill="#059669"/>
-        <circle cx="190" cy="110" r="5" fill="#f59e0b"/>
-        <circle cx="90" cy="160" r="5" fill="#f59e0b"/>
-        <circle cx="258" cy="182" r="23" fill="white" stroke="#059669" stroke-width="2"/>
-        <path d="M248 182l7 7 15-15" stroke="#059669" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="10" y="10" width="300" height="240" fill="rgba(34,229,132,0.05)" stroke="#1c2530" stroke-width="1"/>
+        <polyline points="40,200 90,160 140,175 190,110 240,90 280,50" fill="none" stroke="#22e584" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>
+        <rect x="276" y="46" width="8" height="8" fill="#22e584"/>
+        <rect x="186" y="106" width="8" height="8" fill="#ffb020"/>
+        <rect x="86" y="156" width="8" height="8" fill="#ffb020"/>
+        <rect x="240" y="163" width="38" height="38" fill="#05070a" stroke="#22e584" stroke-width="2"/>
+        <path d="M248 182l7 7 15-15" stroke="#22e584" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
   </div>
@@ -149,17 +151,14 @@
   <p class="testimonials-note">MarketSignal is a portfolio project without production users yet. The quotes below illustrate the kind of feedback the product is designed to earn.</p>
   <div class="cards cards-3">
     <blockquote class="card">
-      <span class="quote-mark">&ldquo;</span>
       <p>I used to check five different sites before looking at a new name. This is the first pass now, every time.</p>
       <cite>Individual investor</cite>
     </blockquote>
     <blockquote class="card">
-      <span class="quote-mark">&ldquo;</span>
       <p>The what-changed view is the feature I actually use. I don't re-read the whole thesis, I just check what moved.</p>
       <cite>Product manager, part-time investor</cite>
     </blockquote>
     <blockquote class="card">
-      <span class="quote-mark">&ldquo;</span>
       <p>No Buy/Sell button was the right call. I wanted the reasoning, not a command.</p>
       <cite>Software engineer</cite>
     </blockquote>
