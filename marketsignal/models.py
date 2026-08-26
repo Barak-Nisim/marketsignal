@@ -90,6 +90,14 @@ class Snapshot:
 
 
 @dataclass(frozen=True)
+class PricePoint:
+    """One daily closing price, oldest-first when returned as a series."""
+
+    date: str
+    close: float
+
+
+@dataclass(frozen=True)
 class WhatChanged:
     previous_as_of: str
     overall_score_delta: float | None

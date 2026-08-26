@@ -88,6 +88,36 @@ def test_research_renders_report(mock_fetch, monkeypatch, tmp_path):
     assert "Apple Inc. (AAPL)" in response.text
     assert "Category scores" in response.text
     assert "Thesis" not in response.text  # no AI requested
+    assert "Price history" not in response.text  # no price history available (autouse default)
+
+
+@patch("marketsignal.web.app.fetch_price_history")
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_shows_price_trend_with_range_toggle(
+    mock_fetch, mock_price_history, monkeypatch, tmp_path
+):
+    import datetime as dt
+
+    from marketsignal.models import PricePoint
+
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+    today = dt.date.today()
+    mock_price_history.return_value = [
+        PricePoint(date=(today - dt.timedelta(days=400 - i)).isoformat(), close=100.0 + i)
+        for i in range(400)
+    ]
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert "Price history" in response.text
+    assert 'data-range-btn="5D"' in response.text
+    assert 'data-range-btn="1M"' in response.text
+    assert 'data-range-btn="1Y"' in response.text
+    assert 'data-range-btn="All"' in response.text
+    assert "range-panel-hidden" in response.text  # non-default ranges start hidden
 
 
 @patch("marketsignal.web.app.fetch_raw_financials")

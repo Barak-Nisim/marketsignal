@@ -11,7 +11,7 @@ import datetime as dt
 
 import yfinance as yf
 
-from marketsignal.models import RawFinancials
+from marketsignal.models import PricePoint, RawFinancials
 
 
 class TickerNotFoundError(Exception):
@@ -35,6 +35,26 @@ def _price_change(history, months_ago: int) -> float | None:
     if past_price == 0:
         return None
     return (current_price - past_price) / past_price
+
+
+def fetch_price_history(ticker: str) -> list[PricePoint]:
+    """Daily closing prices for the ticker's full available history, oldest
+    first. Returns [] on any fetch failure or if the ticker has no price
+    history -- this feeds an optional chart, not a required field, so a
+    miss here should never break the rest of a research run."""
+    ticker = ticker.strip().upper()
+    try:
+        history = yf.Ticker(ticker).history(period="max")
+    except Exception:  # noqa: BLE001 -- same "any failure -> no data" posture as fetch_raw_financials
+        return []
+
+    if history is None or history.empty:
+        return []
+
+    return [
+        PricePoint(date=index.strftime("%Y-%m-%d"), close=float(row["Close"]))
+        for index, row in history.iterrows()
+    ]
 
 
 def fetch_raw_financials(ticker: str) -> RawFinancials:

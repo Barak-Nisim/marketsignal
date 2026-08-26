@@ -3,7 +3,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
+from marketsignal.data.yfinance_source import (
+    TickerNotFoundError,
+    fetch_price_history,
+    fetch_raw_financials,
+)
 
 FAKE_INFO = {
     "longName": "Test Company Inc.",
@@ -83,3 +87,42 @@ def test_price_change_handles_empty_history():
 
     assert _price_change(pd.DataFrame(), 3) is None
     assert _price_change(None, 3) is None
+
+
+@patch("marketsignal.data.yfinance_source.yf.Ticker")
+def test_fetch_price_history_maps_daily_closes(mock_ticker_cls):
+    mock_ticker = MagicMock()
+    mock_ticker.history.return_value = _fake_history(days=10, start_price=100.0, end_price=110.0)
+    mock_ticker_cls.return_value = mock_ticker
+
+    history = fetch_price_history("test")
+
+    mock_ticker.history.assert_called_once_with(period="max")
+    assert len(history) == 10
+    assert history[0].close == 100.0
+    assert history[-1].close == 110.0
+    assert history[0].date < history[-1].date  # oldest first
+
+
+@patch("marketsignal.data.yfinance_source.yf.Ticker")
+def test_fetch_price_history_returns_empty_list_for_empty_response(mock_ticker_cls):
+    mock_ticker = MagicMock()
+    mock_ticker.history.return_value = pd.DataFrame()
+    mock_ticker_cls.return_value = mock_ticker
+
+    assert fetch_price_history("BOGUS") == []
+
+
+class _RaisingHistoryTicker:
+    """Mirrors _RaisingTicker above but raises from .history() instead of
+    .info, for testing fetch_price_history's independent error path."""
+
+    def history(self, *args, **kwargs):
+        raise RuntimeError("boom")
+
+
+@patch("marketsignal.data.yfinance_source.yf.Ticker")
+def test_fetch_price_history_returns_empty_list_when_yfinance_errors(mock_ticker_cls):
+    mock_ticker_cls.return_value = _RaisingHistoryTicker()
+
+    assert fetch_price_history("AAPL") == []

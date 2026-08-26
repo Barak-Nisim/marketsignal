@@ -17,12 +17,17 @@ from fastapi.templating import Jinja2Templates
 
 from marketsignal.accuracy import compute_accuracy_summary
 from marketsignal.charts import sparkline_svg
-from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
+from marketsignal.data.yfinance_source import (
+    TickerNotFoundError,
+    fetch_price_history,
+    fetch_raw_financials,
+)
 from marketsignal.favorites import add_favorite, is_favorite, list_favorites, remove_favorite
 from marketsignal.history import list_recent_tickers, load_history, record_and_diff
 from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.outcomes import compute_outcomes
+from marketsignal.price_trend import build_price_ranges
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, tier_for_score
 from marketsignal.thesis_history import (
@@ -138,6 +143,7 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
     full_history = load_history(financials.ticker)
     trend = full_history[-TREND_WINDOW:]
     outcomes = compute_outcomes(full_history, financials.current_price)
+    price_ranges = build_price_ranges(fetch_price_history(financials.ticker))
 
     return templates.TemplateResponse(
         request,
@@ -156,5 +162,6 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "trend_count": len(trend),
             "outcomes": outcomes,
             "journal_entries": load_journal(financials.ticker),
+            "price_ranges": price_ranges,
         },
     )

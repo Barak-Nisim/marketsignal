@@ -567,6 +567,37 @@ label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
 .trend-box h3 { margin-top: 0; margin-bottom: 0.6rem; }
 .sparkline { display: block; }
 
+.price-trend-box {
+  background: var(--tint-bg);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin: 1rem 0 1.5rem;
+}
+.price-trend-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.price-trend-header h3 { margin: 0; }
+
+.range-toggle { display: flex; gap: 0.35rem; }
+.range-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+}
+.range-btn:hover { border-color: var(--accent); color: var(--accent); }
+.range-btn-active { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+
+.range-panel-hidden { display: none; }
+.range-pct { margin: 0 0 0.5rem; font-size: 1.1rem; font-weight: 700; }
+.range-pct-label { font-weight: 500; font-size: 0.8rem; color: var(--muted); margin-left: 0.2rem; }
+.range-pct-up { color: var(--accent); }
+.range-pct-down { color: var(--down); }
+.price-trend-box .sparkline { width: 100%; height: auto; }
+
 .outcomes-box {
   background: var(--tint-bg);
   border-radius: var(--radius);

@@ -30,6 +30,54 @@
     </dd>
   </dl>
 
+  {% if price_ranges %}
+  <div class="price-trend-box">
+    <div class="price-trend-header">
+      <h3>Price history</h3>
+      <div class="range-toggle" role="tablist">
+        {% for r in price_ranges %}
+        <button
+          type="button"
+          class="range-btn{{ ' range-btn-active' if loop.first }}"
+          data-range-btn="{{ r.label }}"
+          role="tab"
+          aria-selected="{{ 'true' if loop.first else 'false' }}"
+        >{{ r.label }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% for r in price_ranges %}
+    <div class="range-panel{{ '' if loop.first else ' range-panel-hidden' }}" data-range-panel="{{ r.label }}">
+      {% if r.pct_change is not none %}
+      <p class="range-pct {{ 'range-pct-up' if r.pct_change >= 0 else 'range-pct-down' }}">
+        {{ "%+.1f"|format(r.pct_change * 100) }}% <span class="range-pct-label">{{ r.label }}</span>
+      </p>
+      {% endif %}
+      {{ r.svg|safe }}
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+    (function () {
+      var toggle = document.currentScript.previousElementSibling;
+      if (!toggle || !toggle.classList.contains("price-trend-box")) return;
+      var buttons = toggle.querySelectorAll("[data-range-btn]");
+      buttons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var range = btn.getAttribute("data-range-btn");
+          buttons.forEach(function (b) {
+            b.classList.toggle("range-btn-active", b === btn);
+            b.setAttribute("aria-selected", b === btn ? "true" : "false");
+          });
+          toggle.querySelectorAll("[data-range-panel]").forEach(function (panel) {
+            panel.classList.toggle("range-panel-hidden", panel.getAttribute("data-range-panel") !== range);
+          });
+        });
+      });
+    })();
+  </script>
+  {% endif %}
+
   {% if trend_sparkline %}
   <div class="trend-box">
     <h3>Signal trend (last {{ trend_count }} research run{{ "s" if trend_count != 1 }})</h3>
