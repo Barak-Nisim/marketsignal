@@ -9,7 +9,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 1. **[Moderate]** Web-search-grounded recent news in the AI thesis ([issue #8](https://github.com/Barak-Nisim/marketsignal/issues/8)) -- deferred from v1 because combining Claude's `web_search` tool with strict structured output is an unverified technical unknown; worth a focused spike.
 2. **[Major]** Sector-relative scoring: compare a ticker's P/E, margins, etc. against its own sector/industry average instead of fixed absolute thresholds.
 3. **[Moderate]** Support an alternate data provider as a fallback, since `yfinance` is an unofficial wrapper and can break when Yahoo changes something upstream.
-4. **[Shipped]** ~~A historical trend chart rendering overall score over time from the local history file.~~ Shipped as a sparkline on the report page (signal score over time, not raw price -- a price chart specifically is still open, see the Web UI section).
+4. **[Shipped]** ~~A historical trend chart rendering overall score over time from the local history file.~~ Shipped as a sparkline on the report page (signal score over time; the raw price chart is a separate item, see #14).
 5. **[Minor]** Make the scoring thresholds configurable (a YAML/JSON override) instead of hardcoded in `scoring.py`.
 6. **[Moderate]** Add forward-looking valuation signals (forward P/E, consensus EPS estimates) alongside the current trailing-metric-only valuation category.
 7. **[Minor]** Add a dividend yield / payout ratio signal, useful for income-focused tickers that the current five categories don't address well.
@@ -25,7 +25,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 ## Web UI / UX
 
 13. **[Minor]** Ticker autocomplete/typeahead on the research form.
-14. **[Moderate]** A sparkline *price* chart on the report page (the shipped sparkline is signal score over time, not the raw price; currently price is still only 3/6/12-month deltas as numbers).
+14. **[Shipped]** ~~A sparkline *price* chart on the report page.~~ Shipped with a 5D/1M/1Y/All range toggle: one daily-history fetch per research run, sliced into four windows and pre-rendered server-side, so switching ranges is instant with no extra request. No intraday "1 Day" option -- deliberately left out since it needs a separate, less reliable fetch. See `price_trend.py`.
 15. **[Minor]** Mobile polish pass on the report's metric-detail tables.
 16. **[Shipped]** ~~Manual dark/light theme toggle.~~ Shipped.
 17. **[Minor]** Print-friendly stylesheet for the report page.
