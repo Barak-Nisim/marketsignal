@@ -16,7 +16,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 
 ## Personal-use workflow
 
-8. **[Major]** Watchlist support (multiple tickers per run) ([issue #9](https://github.com/Barak-Nisim/marketsignal/issues/9)) -- v1 is single-ticker by explicit scope decision; this is the most likely thing to actually get requested once v1 has been used for a while.
+8. **[Shipped]** ~~Watchlist support (multiple tickers per run)~~ Shipped as named, saved portfolios (`/portfolios`) rather than a one-off multi-ticker research run -- see #40 below for the fuller writeup. A single research run is still single-ticker by design; a portfolio is the multi-ticker surface.
 9. **[Moderate]** A digest mode: run against a saved watchlist on a schedule and produce one summary of everything that changed.
 10. **[Minor]** CSV/JSON export of a report for tracking in a spreadsheet.
 11. **[Moderate]** Side-by-side comparison view for two tickers.
@@ -49,7 +49,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 
 ## Integrations
 
-29. **[Major]** Portfolio-level aggregation: sum signal scores across a list of holdings for one portfolio-level readout instead of ticker-by-ticker only.
+29. **[Shipped]** ~~Portfolio-level aggregation: sum signal scores across a list of holdings for one portfolio-level readout instead of ticker-by-ticker only.~~ Shipped -- see #40.
 30. **[Major]** Read-only brokerage integration (e.g. via Plaid) to auto-populate a watchlist from actual holdings, instead of typing tickers in by hand.
 
 ## Shipped since this list was written (2026-08-25)
@@ -67,11 +67,12 @@ Not originally on this list, added as they were built:
 
 ## Bigger bets (real architecture decisions, plan formally before building)
 
-The 2026-08-25 conversation with Barak reframed MarketSignal from "an AI stock research app" to "a system that maintains and challenges an investment thesis over time" (five layers: Thesis Engine, Multi-Agent Debate, Evidence/Provenance, Historical Accountability, Portfolio Intelligence). Reviewed and sequenced the same day. Sequence 1 (items 34-37) and Historical Accountability (39) are now shipped.
+The 2026-08-25 conversation with Barak reframed MarketSignal from "an AI stock research app" to "a system that maintains and challenges an investment thesis over time" (five layers: Thesis Engine, Multi-Agent Debate, Evidence/Provenance, Historical Accountability, Portfolio Intelligence). Reviewed and sequenced the same day. Sequence 1 (items 34-37), Historical Accountability (39), and Portfolio Intelligence (40) are now shipped.
+
+40. **[Shipped]** ~~Portfolio Intelligence: multi-ticker concentration/exposure analysis.~~ Shipped as named, saved portfolios (`portfolios.py`, `/portfolios`): a deterministic aggregate of the same five signals across a set of holdings (averaged, missing categories excluded rather than zeroed) plus a sector-concentration count. Scoped down from the original idea in a formal plan, confirmed with Barak first: no AI-narrated portfolio thesis, no numeric growth-rate projection (would be real forecasting, conflicts with the standing "signals and reasoning, not a prediction" stance), and no pairwise correlation/covariance between holdings -- that last one is real quant work and the natural next step if this gets real use. Also no portfolio-level score history yet (each holding still gets its own history via `record_and_diff`, but the portfolio's own aggregate score isn't trended over time) -- explicitly deferred, not forgotten.
 
 **Still parked:**
 
 38. **[Major]** Multi-agent debate: specialized agents (bull, bear, and possibly others) argue a ticker independently before a synthesis step reconciles them, instead of one model call producing both cases directly. Real cost implications (multiple Opus calls per research run instead of one -- a scoped bull/bear-only version at 3 calls was considered and explicitly deferred rather than built now) and a real prerequisite: a News/Catalyst agent needs grounded current data, which is #1 above, an "unverified technical unknown" -- solve that first. Do not add a "Fundamentals Agent"; fundamentals stay in the deterministic scoring engine, which already does that job without hallucination risk.
-40. **[Major]** Portfolio Intelligence: multi-ticker concentration/correlation/exposure analysis. Real value but a genuinely new UI surface (multi-ticker input) and new data surface (pairwise historical price series). Deliberately left parked pending its own scoping conversation, not folded into the same build session as items 34-37/39.
 
 **Considered and rejected:** an "Ask MarketSignal" free-form chat box (from the vision's own company-page mockup) was cut -- it reopens the hallucination/trust surface that Evidence & Provenance (34) is meant to close, and conflicts with the vision's own stated principle that "the AI should support the product, not be the product."
