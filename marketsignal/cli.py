@@ -12,8 +12,15 @@ from marketsignal.favorites import add_favorite, list_favorites, remove_favorite
 from marketsignal.history import load_history, record_and_diff
 from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.outcomes import compute_outcomes
+from marketsignal.portfolio_review import build_portfolio_review
+from marketsignal.portfolios import (
+    delete_portfolio,
+    get_portfolio,
+    list_portfolios,
+    save_portfolio,
+)
 from marketsignal.report.markdown import render
-from marketsignal.scoring import score_financials
+from marketsignal.scoring import score_financials, tier_for_score
 from marketsignal.thesis_history import (
     load_thesis_history,
     previous_claims,
@@ -60,6 +67,17 @@ def _build_parser() -> argparse.ArgumentParser:
     journal_add.add_argument("note")
     journal_list = journal_action.add_parser("list", help="List a ticker's journal entries")
     journal_list.add_argument("ticker")
+
+    portfolio = subparsers.add_parser("portfolio", help="Manage and review saved portfolios")
+    portfolio_action = portfolio.add_subparsers(dest="portfolio_action", required=True)
+    portfolio_create = portfolio_action.add_parser("create", help="Create or replace a portfolio")
+    portfolio_create.add_argument("name")
+    portfolio_create.add_argument("tickers", nargs="+", help="One or more ticker symbols")
+    portfolio_action.add_parser("list", help="List saved portfolios")
+    portfolio_review = portfolio_action.add_parser("review", help="Review a saved portfolio")
+    portfolio_review.add_argument("name")
+    portfolio_delete = portfolio_action.add_parser("delete", help="Delete a saved portfolio")
+    portfolio_delete.add_argument("name")
 
     return parser
 
@@ -175,6 +193,84 @@ def _run_journal(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_portfolio(args: argparse.Namespace) -> int:
+    if args.portfolio_action == "create":
+        portfolio = save_portfolio(args.name, args.tickers)
+        print(
+            f"Saved portfolio '{portfolio.name}' with {len(portfolio.tickers)} "
+            f"ticker(s): {', '.join(portfolio.tickers)}",
+            file=sys.stderr,
+        )
+    elif args.portfolio_action == "list":
+        portfolios = list_portfolios()
+        if not portfolios:
+            print("No portfolios yet.", file=sys.stderr)
+        else:
+            for p in portfolios:
+                print(f"{p.name}: {', '.join(p.tickers)}")
+    elif args.portfolio_action == "delete":
+        delete_portfolio(args.name)
+        print(f"Deleted portfolio '{args.name}'.", file=sys.stderr)
+    elif args.portfolio_action == "review":
+        return _run_portfolio_review(args.name)
+
+    return 0
+
+
+def _run_portfolio_review(name: str) -> int:
+    portfolio = get_portfolio(name)
+    if portfolio is None:
+        print(f"No portfolio named '{name}'.", file=sys.stderr)
+        return 1
+
+    results = []
+    failed_tickers = []
+    for ticker in portfolio.tickers:
+        try:
+            financials = fetch_raw_financials(ticker)
+        except TickerNotFoundError:
+            failed_tickers.append(ticker)
+            continue
+        result = score_financials(financials)
+        record_and_diff(result)
+        results.append(result)
+
+    review = build_portfolio_review(portfolio.name, results, failed_tickers)
+
+    print(f"# {review.portfolio_name}\n")
+    if review.failed_tickers:
+        print(f"Could not fetch data for: {', '.join(review.failed_tickers)}\n")
+
+    if review.overall_score is not None:
+        print(f"Portfolio signal: {review.overall_score:.2f} / 4.0 ({review.tier})\n")
+    else:
+        print("No tickers could be scored yet.\n")
+
+    for category_id, avg in review.category_averages.items():
+        label = category_id.replace("_", " ").title()
+        if avg is not None:
+            print(f"{label}: {avg:.2f} ({tier_for_score(avg)})")
+        else:
+            print(f"{label}: n/a")
+
+    if review.sector_counts:
+        print("\nSector concentration:")
+        total = len(review.holdings)
+        for sector, count in review.sector_counts.items():
+            print(f"- {sector}: {count} ({count / total * 100:.0f}%)")
+
+    if review.holdings:
+        print("\nHoldings:")
+        for h in review.holdings:
+            if h.overall_score is not None:
+                score_text = f"{h.overall_score:.2f} ({h.tier})"
+            else:
+                score_text = "n/a"
+            print(f"- {h.financials.ticker} ({h.financials.company_name}): {score_text}")
+
+    return 0
+
+
 def _run_favorites(args: argparse.Namespace) -> int:
     if args.favorites_action == "list":
         favorites = list_favorites()
@@ -205,6 +301,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_favorites(args)
     if args.command == "journal":
         return _run_journal(args)
+    if args.command == "portfolio":
+        return _run_portfolio(args)
 
     parser.print_help()
     return 1

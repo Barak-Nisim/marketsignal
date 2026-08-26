@@ -248,3 +248,91 @@ def test_research_shows_journal_entries(mock_fetch, capsys, monkeypatch, tmp_pat
     assert exit_code == 0
     assert "## Your journal" in captured.out
     assert "Watching for Q2 guidance." in captured.out
+
+
+FAKE_MSFT = RawFinancials(
+    ticker="MSFT",
+    company_name="Microsoft Corporation",
+    sector="Technology",
+    industry="Software",
+    as_of="2026-01-01",
+    current_price=400,
+    trailing_pe=30,
+    revenue_growth=0.15,
+)
+
+
+def test_portfolio_list_when_empty(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    exit_code = main(["portfolio", "list"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "No portfolios yet." in captured.err
+
+
+def test_portfolio_create_and_list(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    main(["portfolio", "create", "Growth Picks", "aapl", "msft"])
+    exit_code = main(["portfolio", "list"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Growth Picks: AAPL, MSFT" in captured.out
+
+
+def test_portfolio_delete(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+    main(["portfolio", "create", "Growth Picks", "AAPL"])
+
+    main(["portfolio", "delete", "Growth Picks"])
+    exit_code = main(["portfolio", "list"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "No portfolios yet." in captured.err
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_portfolio_review_prints_aggregate_and_holdings(mock_fetch, capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    main(["portfolio", "create", "Growth Picks", "AAPL", "MSFT"])
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+
+    exit_code = main(["portfolio", "review", "Growth Picks"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "# Growth Picks" in captured.out
+    assert "Portfolio signal:" in captured.out
+    assert "Technology: 2 (100%)" in captured.out
+    assert "AAPL (Apple Inc.)" in captured.out
+    assert "MSFT (Microsoft Corporation)" in captured.out
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_portfolio_review_handles_one_bad_ticker(mock_fetch, capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    main(["portfolio", "create", "Mixed", "AAPL", "BOGUS"])
+    mock_fetch.side_effect = [FAKE_FINANCIALS, TickerNotFoundError("BOGUS")]
+
+    exit_code = main(["portfolio", "review", "Mixed"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Could not fetch data for: BOGUS" in captured.out
+    assert "AAPL (Apple Inc.)" in captured.out
+
+
+def test_portfolio_review_unknown_name_returns_error(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    exit_code = main(["portfolio", "review", "Nope"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "No portfolio named 'Nope'." in captured.err
