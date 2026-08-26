@@ -2,73 +2,79 @@
 {% block title %}MarketSignal: AI-assisted investment research{% endblock %}
 {% block content %}
 
-<section class="hero">
-  <div class="hero-grid">
-    <div class="hero-copy fade-in fade-in-1">
-      <p class="eyebrow">AI-Assisted Investment Research</p>
-      <h1>Research a company in minutes, not hours.</h1>
-      <p class="hero-sub">
-        MarketSignal analyzes financial performance, growth, profitability,
-        valuation, financial health, and momentum to produce a structured
-        research brief backed by real market data.
-      </p>
-      <div class="cta-row">
-        <a href="/app" class="btn btn-primary">Try the live demo</a>
-        <a href="/how-it-works" class="btn btn-secondary">See how it works</a>
-      </div>
-      <p class="hero-note">Free to run &middot; No signup &middot; Real market data</p>
-    </div>
+<section class="workspace-hero">
+  <div class="workspace-hero-prompt fade-in fade-in-1">
+    <p class="eyebrow">MarketSignal</p>
+    <h1>What company do you want to research?</h1>
+  </div>
 
-    <div class="hero-visual fade-in fade-in-2" aria-hidden="true">
-      <div class="preview-card">
-        <div class="preview-card-header">
-          <div>
-            <p class="preview-company">Apple Inc.</p>
-            <p class="preview-ticker">AAPL</p>
-          </div>
-          <div class="preview-score">
-            <span class="preview-score-num">2.68 / 4.0</span>
-            <span class="preview-score-tier">Above Average</span>
-          </div>
+  <form method="post" action="/research" class="hero-search-form fade-in fade-in-2">
+    <input
+      type="text"
+      name="ticker"
+      class="hero-search-input"
+      placeholder="AAPL"
+      autocomplete="off"
+      spellcheck="false"
+      required
+    >
+    <button type="submit" class="hero-search-btn">Research company &rarr;</button>
+  </form>
+
+  <div class="hero-chip-row fade-in fade-in-2">
+    <span class="hero-chip-label">Popular:</span>
+    {% for t in ["AAPL", "NVDA", "MSFT", "TSLA"] %}
+    <form method="post" action="/research" class="chip-form">
+      <input type="hidden" name="ticker" value="{{ t }}">
+      <button type="submit" class="ticker-chip">{{ t }}</button>
+    </form>
+    {% endfor %}
+  </div>
+
+  <div class="example-result fade-in fade-in-3" aria-hidden="true">
+    <p class="example-label">Example result &middot; this is what you'll get</p>
+    <div class="example-panel">
+      <div class="example-panel-header">
+        <div>
+          <p class="example-company">Apple Inc. <span class="example-ticker">AAPL</span></p>
+          <p class="example-price">$214.37 <span class="price-up">&#9650; 1.2%</span></p>
         </div>
-        <ul class="preview-signals">
-          <li>
-            <span class="preview-signal-label">Growth</span>
-            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-strong" style="width: 85%"></span></span>
-            <span class="preview-signal-value preview-value-strong">Strong</span>
-          </li>
-          <li>
-            <span class="preview-signal-label">Profitability</span>
-            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-strong" style="width: 80%"></span></span>
-            <span class="preview-signal-value preview-value-strong">Strong</span>
-          </li>
-          <li>
-            <span class="preview-signal-label">Valuation</span>
-            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-weak" style="width: 25%"></span></span>
-            <span class="preview-signal-value preview-value-weak">Weak</span>
-          </li>
-          <li>
-            <span class="preview-signal-label">Financial Health</span>
-            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-strong" style="width: 90%"></span></span>
-            <span class="preview-signal-value preview-value-strong">Strong</span>
-          </li>
-          <li>
-            <span class="preview-signal-label">Momentum</span>
-            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-average" style="width: 55%"></span></span>
-            <span class="preview-signal-value preview-value-average">Average</span>
-          </li>
-        </ul>
-        <p class="preview-cmd">$ marketsignal research AAPL<span class="preview-cursor">&#9608;</span></p>
+        <div class="example-score-block">
+          <p class="example-score-label">MarketSignal Score</p>
+          <p class="example-score-num">2.68 / 4.0</p>
+          <p class="example-score-tier">Above Average</p>
+        </div>
       </div>
+      <div class="example-dimensions">
+        <div class="example-dim">
+          <span class="example-dim-label">Growth</span>
+          <span class="example-dim-value value-strong">Strong</span>
+          <span class="example-dim-bar"><span class="example-dim-fill fill-strong" style="width: 85%"></span></span>
+        </div>
+        <div class="example-dim">
+          <span class="example-dim-label">Profitability</span>
+          <span class="example-dim-value value-strong">Strong</span>
+          <span class="example-dim-bar"><span class="example-dim-fill fill-strong" style="width: 80%"></span></span>
+        </div>
+        <div class="example-dim">
+          <span class="example-dim-label">Valuation</span>
+          <span class="example-dim-value value-weak">Weak</span>
+          <span class="example-dim-bar"><span class="example-dim-fill fill-weak" style="width: 25%"></span></span>
+        </div>
+        <div class="example-dim">
+          <span class="example-dim-label">Financial Health</span>
+          <span class="example-dim-value value-strong">Strong</span>
+          <span class="example-dim-bar"><span class="example-dim-fill fill-strong" style="width: 90%"></span></span>
+        </div>
+        <div class="example-dim">
+          <span class="example-dim-label">Momentum</span>
+          <span class="example-dim-value value-average">Average</span>
+          <span class="example-dim-bar"><span class="example-dim-fill fill-average" style="width: 55%"></span></span>
+        </div>
+      </div>
+      <p class="example-panel-cmd">$ marketsignal research AAPL</p>
     </div>
   </div>
-</section>
-
-<section class="stat-strip fade-in fade-in-3">
-  <div class="stat"><span class="stat-num">5</span><span class="stat-label">Research dimensions</span></div>
-  <div class="stat"><span class="stat-num">Real</span><span class="stat-label">Market data</span></div>
-  <div class="stat"><span class="stat-num">Seconds</span><span class="stat-label">To generate analysis</span></div>
-  <div class="stat"><span class="stat-num">$0</span><span class="stat-label">To use the core research engine</span></div>
 </section>
 
 <section class="how-it-works-teaser">

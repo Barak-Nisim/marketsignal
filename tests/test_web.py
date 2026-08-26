@@ -24,13 +24,16 @@ FAKE_FINANCIALS = RawFinancials(
 )
 
 
-def test_landing_page_shows_marketing_content():
+def test_landing_page_has_a_working_research_form():
     response = client.get("/")
 
     assert response.status_code == 200
     assert "MarketSignal" in response.text
-    assert "Try the live demo" in response.text
-    assert 'name="ticker"' not in response.text
+    assert "What company do you want to research?" in response.text
+    assert 'action="/research"' in response.text
+    assert 'name="ticker"' in response.text
+    assert "AAPL" in response.text and "NVDA" in response.text
+    assert 'name="use_ai"' not in response.text  # AI toggle is /app-only, not on the landing page
 
 
 def test_how_it_works_page_explains_methodology():
