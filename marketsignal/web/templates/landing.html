@@ -2,126 +2,182 @@
 {% block title %}MarketSignal: AI-assisted investment research{% endblock %}
 {% block content %}
 
-<div class="term-page">
-  <div class="term-window">
-    <div class="term-titlebar">
-      <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
-      <span class="mock-titlebar-label">marketsignal -- session</span>
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy fade-in fade-in-1">
+      <p class="eyebrow">AI-Assisted Investment Research</p>
+      <h1>Research a company in minutes, not hours.</h1>
+      <p class="hero-sub">
+        MarketSignal analyzes financial performance, growth, profitability,
+        valuation, financial health, and momentum to produce a structured
+        research brief backed by real market data.
+      </p>
+      <div class="cta-row">
+        <a href="/app" class="btn btn-primary">Try the live demo</a>
+        <a href="/how-it-works" class="btn btn-secondary">See how it works</a>
+      </div>
+      <p class="hero-note">Free to run &middot; No signup &middot; Real market data</p>
     </div>
 
-    <div class="term-body">
-
-      <div class="term-block fade-in fade-in-1">
-        <p class="term-prompt">$ marketsignal --about</p>
-        <div class="term-output">
-          <p class="term-tag">// investment research, no Buy/Sell button</p>
-          <h1>Research a ticker in seconds, not a spreadsheet afternoon.</h1>
-          <p class="term-prose">
-            MarketSignal scores any US stock or ETF across five categories using real
-            financial data, tracks what changed since your last look, and (optionally)
-            has Claude write a reasoned thesis. Just the signals and the reasoning, so
-            you draw the conclusion.
-          </p>
-          <div class="term-cta-row">
-            <a href="/app" class="btn btn-primary">Try the live demo</a>
-            <a href="/how-it-works" class="btn btn-secondary">See how it works</a>
+    <div class="hero-visual fade-in fade-in-2" aria-hidden="true">
+      <div class="preview-card">
+        <div class="preview-card-header">
+          <div>
+            <p class="preview-company">Apple Inc.</p>
+            <p class="preview-ticker">AAPL</p>
           </div>
-          <p class="term-comment"># free to run &middot; no signup &middot; real market data, not sample data</p>
+          <div class="preview-score">
+            <span class="preview-score-num">2.68 / 4.0</span>
+            <span class="preview-score-tier">Above Average</span>
+          </div>
         </div>
+        <ul class="preview-signals">
+          <li>
+            <span class="preview-signal-label">Growth</span>
+            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-strong" style="width: 85%"></span></span>
+            <span class="preview-signal-value preview-value-strong">Strong</span>
+          </li>
+          <li>
+            <span class="preview-signal-label">Profitability</span>
+            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-strong" style="width: 80%"></span></span>
+            <span class="preview-signal-value preview-value-strong">Strong</span>
+          </li>
+          <li>
+            <span class="preview-signal-label">Valuation</span>
+            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-weak" style="width: 25%"></span></span>
+            <span class="preview-signal-value preview-value-weak">Weak</span>
+          </li>
+          <li>
+            <span class="preview-signal-label">Financial Health</span>
+            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-strong" style="width: 90%"></span></span>
+            <span class="preview-signal-value preview-value-strong">Strong</span>
+          </li>
+          <li>
+            <span class="preview-signal-label">Momentum</span>
+            <span class="preview-signal-bar"><span class="preview-signal-fill preview-fill-average" style="width: 55%"></span></span>
+            <span class="preview-signal-value preview-value-average">Average</span>
+          </li>
+        </ul>
+        <p class="preview-cmd">$ marketsignal research AAPL<span class="preview-cursor">&#9608;</span></p>
       </div>
-
-      <div class="term-block fade-in fade-in-2">
-        <p class="term-prompt">$ marketsignal research AAPL<span class="term-cursor">&#9608;</span></p>
-        <div class="term-output term-output-mono" aria-hidden="true">
-          <p class="mock-org">Apple Inc. (AAPL)</p>
-          <p class="mock-score"><span class="score-badge">2.68 / 4.0</span> Above Average</p>
-          <ul class="mock-findings">
-            <li><span class="mock-bars mock-priority-strong">&#9601;&#9605;&#9608;</span> Growth: Strong</li>
-            <li><span class="mock-bars mock-priority-strong">&#9601;&#9605;&#9608;</span> Profitability: Strong</li>
-            <li><span class="mock-bars mock-priority-weak">&#9608;&#9601;&#9601;</span> Valuation: Weak</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="term-block fade-in fade-in-3">
-        <p class="term-prompt">$ marketsignal --stats</p>
-        <dl class="term-stats term-output-mono">
-          <div><dt>signal_categories</dt><dd>5</dd></div>
-          <div><dt>automated_tests</dt><dd>28</dd></div>
-          <div><dt>cost_to_run</dt><dd>$0, no data key needed</dd></div>
-          <div><dt>license</dt><dd>MIT, open source</dd></div>
-        </dl>
-      </div>
-
-      <div class="term-block">
-        <p class="term-prompt">$ marketsignal --features</p>
-        <ol class="term-list">
-          <li><strong>Real financial data.</strong> Pulls live fundamentals and price history from Yahoo Finance. No sample data, no fabricated numbers.</li>
-          <li><strong>Five deterministic signals.</strong> Valuation, Growth, Profitability, Financial Health, and Momentum, each scored against fixed, documented thresholds. Explainable, not a black box.</li>
-          <li><strong>AI-reasoned thesis.</strong> Claude synthesizes the signals into a written thesis with a confidence level. It narrates the signals; it never invents or overrides them.</li>
-          <li><strong>What changed since last time.</strong> Every run is saved locally. The next time you check a ticker, the report shows exactly what moved since your last look.</li>
-        </ol>
-      </div>
-
-      <div class="term-block">
-        <p class="term-prompt">$ marketsignal --why</p>
-        <div class="term-output">
-          <p class="term-prose">
-            Real research means pulling up ten different numbers across three tabs and
-            trying to hold the whole picture in your head, every single time you check
-            a name. MarketSignal turns that into one pass: the same five categories,
-            the same thresholds, every time, so a stock's story is comparable across
-            tickers and across the weeks you keep coming back to it. The AI layer adds
-            reasoning on top of the numbers; it never replaces them.
-          </p>
-        </div>
-      </div>
-
-      <div class="term-block">
-        <p class="term-prompt">$ marketsignal --compare</p>
-        <div class="term-diff term-output-mono">
-          <p class="term-diff-old">- a stock screener gives you a table</p>
-          <p class="term-diff-new">+ marketsignal gives you a reasoned thesis</p>
-          <p class="term-diff-old">- generic AI tools guess at a score</p>
-          <p class="term-diff-new">+ marketsignal scores deterministically; AI only narrates it</p>
-          <p class="term-diff-old">- a Buy/Sell button pretends to know more than the data does</p>
-          <p class="term-diff-new">+ marketsignal shows you the signals and lets you decide</p>
-        </div>
-      </div>
-
-      <div class="term-block">
-        <p class="term-prompt">$ marketsignal --how-it-works</p>
-        <ol class="term-list term-list-numbered">
-          <li><strong>Enter</strong> a US stock or ETF ticker.</li>
-          <li><strong>Score</strong> against five deterministic signal categories from real market data.</li>
-          <li><strong>Read</strong> an AI-reasoned thesis and see what changed since your last check.</li>
-        </ol>
-        <a href="/how-it-works" class="link-more">See the full methodology &rarr;</a>
-      </div>
-
-      <div class="term-block">
-        <p class="term-prompt">$ marketsignal --feedback</p>
-        <p class="term-comment"># illustrative -- a portfolio project without production users yet</p>
-        <div class="term-log term-output-mono">
-          <p class="term-log-line">&gt; I used to check five different sites before looking at a new name. This is the first pass now, every time.</p>
-          <p class="term-log-user"># individual investor</p>
-          <p class="term-log-line">&gt; The what-changed view is the feature I actually use. I don't re-read the whole thesis, I just check what moved.</p>
-          <p class="term-log-user"># product manager, part-time investor</p>
-          <p class="term-log-line">&gt; No Buy/Sell button was the right call. I wanted the reasoning, not a command.</p>
-          <p class="term-log-user"># software engineer</p>
-        </div>
-      </div>
-
-      <div class="term-block term-block-final">
-        <p class="term-prompt">$ marketsignal research <span class="term-cursor">&#9608;</span></p>
-        <div class="term-output">
-          <p class="term-prose">Free, real data, takes about ten seconds for a ticker you already know.</p>
-          <a href="/app" class="btn btn-primary btn-large">Try the live demo</a>
-        </div>
-      </div>
-
     </div>
   </div>
-</div>
+</section>
+
+<section class="stat-strip fade-in fade-in-3">
+  <div class="stat"><span class="stat-num">5</span><span class="stat-label">Research dimensions</span></div>
+  <div class="stat"><span class="stat-num">Real</span><span class="stat-label">Market data</span></div>
+  <div class="stat"><span class="stat-num">Seconds</span><span class="stat-label">To generate analysis</span></div>
+  <div class="stat"><span class="stat-num">$0</span><span class="stat-label">To use the core research engine</span></div>
+</section>
+
+<section class="how-it-works-teaser">
+  <h2>How MarketSignal works</h2>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <span class="flow-num">1</span>
+      <h3>Enter a ticker</h3>
+      <p>Any US stock or ETF. No account, no setup.</p>
+    </div>
+    <div class="flow-step">
+      <span class="flow-num">2</span>
+      <h3>MarketSignal analyzes the company</h3>
+      <p>Five deterministic signals, scored against fixed, documented thresholds using real financial data.</p>
+    </div>
+    <div class="flow-step">
+      <span class="flow-num">3</span>
+      <h3>Review the signals and reasoning</h3>
+      <p>An optional AI-written thesis explains what the data shows, on both sides, with a confidence level.</p>
+    </div>
+  </div>
+</section>
+
+<section class="dimensions">
+  <h2>Research dimensions</h2>
+  <p class="section-sub">
+    The same five categories, every time, so a company's story is comparable across tickers and across the
+    weeks you keep coming back to it. Each score is deterministic, against fixed and documented thresholds;
+    the optional AI layer only narrates what the data shows, on both sides, and never invents a number or
+    tells you what to do.
+  </p>
+  <div class="dimension-cards">
+    <div class="dimension-card">
+      <h3>Growth</h3>
+      <p>Revenue and earnings growth, scored against fixed thresholds.</p>
+    </div>
+    <div class="dimension-card">
+      <h3>Profitability</h3>
+      <p>Margins and return on equity that show how efficiently the company operates.</p>
+    </div>
+    <div class="dimension-card">
+      <h3>Valuation</h3>
+      <p>Trailing P/E, price-to-book, and other multiples relative to the business.</p>
+    </div>
+    <div class="dimension-card">
+      <h3>Financial Health</h3>
+      <p>Debt levels and liquidity, so leverage risk isn't hiding off to the side.</p>
+    </div>
+    <div class="dimension-card">
+      <h3>Momentum</h3>
+      <p>Price trend and position within its 52-week range.</p>
+    </div>
+  </div>
+</section>
+
+<section class="example-output">
+  <h2>See the full research brief</h2>
+  <p class="section-sub">
+    Every category score is traceable to a specific metric and threshold. With AI narration on, you also
+    get a written thesis, argued on both sides, and a confidence level.
+  </p>
+  <div class="example-card">
+    <div class="preview-card-header">
+      <div>
+        <p class="preview-company">Apple Inc. (AAPL)</p>
+        <p class="example-meta">As of 2026-01-01 &middot; Technology / Consumer Electronics</p>
+      </div>
+      <div class="preview-score">
+        <span class="preview-score-num">2.68 / 4.0</span>
+        <span class="preview-score-tier">Above Average</span>
+      </div>
+    </div>
+    <div class="example-grid">
+      <div>
+        <h4>Bull case</h4>
+        <p>Strong revenue growth and industry-leading margins support the case that the business continues to compound at an above-average rate.</p>
+      </div>
+      <div>
+        <h4>Bear case</h4>
+        <p>Valuation multiples remain elevated relative to the growth rate, leaving little room for a disappointing quarter.</p>
+      </div>
+    </div>
+    <p class="example-cmd">$ marketsignal research AAPL --confidence medium</p>
+  </div>
+</section>
+
+<section class="testimonials">
+  <h2>Illustrative feedback</h2>
+  <p class="section-sub">MarketSignal is a portfolio project without production users yet. The quotes below illustrate the kind of feedback the product is designed to earn.</p>
+  <div class="testimonial-cards">
+    <blockquote class="testimonial-card">
+      <p>I used to check five different sites before looking at a new name. This is the first pass now, every time.</p>
+      <cite>Individual investor</cite>
+    </blockquote>
+    <blockquote class="testimonial-card">
+      <p>The what-changed view is the feature I actually use. I don't re-read the whole thesis, I just check what moved.</p>
+      <cite>Product manager, part-time investor</cite>
+    </blockquote>
+    <blockquote class="testimonial-card">
+      <p>It's signals and reasoning, not a recommendation. That was the right call for something I'm putting real money behind.</p>
+      <cite>Software engineer</cite>
+    </blockquote>
+  </div>
+</section>
+
+<section class="final-cta">
+  <h2>Research your first ticker.</h2>
+  <p>Free, real data, takes about ten seconds for a ticker you already know.</p>
+  <a href="/app" class="btn btn-primary btn-large">Try MarketSignal</a>
+</section>
 
 {% endblock %}
