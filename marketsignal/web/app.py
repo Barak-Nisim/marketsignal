@@ -33,6 +33,11 @@ from marketsignal.history import list_recent_tickers, load_history, record_and_d
 from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.models import SIGNAL_LEVELS
 from marketsignal.outcomes import compute_outcomes
+from marketsignal.portfolio_performance import (
+    PERIOD_LABELS,
+    SHARES_PER_HOLDING,
+    build_portfolio_performance,
+)
 from marketsignal.portfolio_review import build_portfolio_review
 from marketsignal.portfolios import (
     delete_portfolio_by_slug,
@@ -211,7 +216,7 @@ def portfolios_delete(slug: str):
 
 
 @app.get("/portfolios/{slug}/review", response_class=HTMLResponse)
-def portfolio_review_page(request: Request, slug: str):
+def portfolio_review_page(request: Request, slug: str, period: str = "1Y"):
     portfolio = get_portfolio_by_slug(slug)
     if portfolio is None:
         return RedirectResponse(url="/portfolios", status_code=303)
@@ -230,6 +235,10 @@ def portfolio_review_page(request: Request, slug: str):
 
     review = build_portfolio_review(portfolio.name, results, failed_tickers)
 
+    price_histories = {ticker: fetch_price_history(ticker) for ticker in portfolio.tickers}
+    performance = build_portfolio_performance(portfolio, price_histories, period)
+    value_sparkline = sparkline_svg([p.value for p in performance.value_series])
+
     return templates.TemplateResponse(
         request,
         "portfolio_review.html",
@@ -238,5 +247,9 @@ def portfolio_review_page(request: Request, slug: str):
             "review": review,
             "tier_for_score": tier_for_score,
             "signal_bucket": signal_bucket,
+            "performance": performance,
+            "period_labels": PERIOD_LABELS,
+            "shares_per_holding": SHARES_PER_HOLDING,
+            "value_sparkline": value_sparkline,
         },
     )

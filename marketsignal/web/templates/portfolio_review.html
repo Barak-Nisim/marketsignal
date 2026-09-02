@@ -63,6 +63,57 @@
   </div>
   {% endif %}
 
+  {% if performance.holdings or performance.excluded_tickers %}
+  <div class="outcomes-box">
+    <h3>Performance</h3>
+    <div class="range-toggle">
+      {% for label in period_labels %}
+      <a
+        class="range-btn{{ ' range-btn-active' if label == performance.period }}"
+        href="/portfolios/{{ portfolio.name|slugify }}/review?period={{ label }}"
+      >{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    {% if performance.holdings %}
+    <p class="range-pct {{ 'range-pct-up' if performance.direction == 'up' else 'range-pct-down' if performance.direction == 'down' else '' }}">
+      {% if performance.pct_change is not none %}{{ "%+.1f"|format(performance.pct_change * 100) }}%{% endif %}
+      <span class="range-pct-label">
+        {{ "%.0f"|format(performance.start_total) }} &rarr; {{ "%.0f"|format(performance.end_total) }}
+        ({{ "%+.0f"|format(performance.abs_change) }}) over {{ performance.period }}
+      </span>
+    </p>
+    <p class="field-caption">
+      {{ performance.up_count }} up, {{ performance.down_count }} down, {{ performance.flat_count }} flat.
+      Every holding is valued at a fixed {{ shares_per_holding }} shares, so the total is price-weighted, not a real position size.
+    </p>
+    {% if value_sparkline %}<div class="perf-sparkline">{{ value_sparkline|safe }}</div>{% endif %}
+
+    <table>
+      <thead><tr><th>Ticker</th><th>Start</th><th>End</th><th>Change</th></tr></thead>
+      <tbody>
+        {% for h in performance.holdings %}
+        <tr>
+          <td><a href="/app?ticker={{ h.ticker }}">{{ h.ticker }}</a></td>
+          <td>{{ "%.2f"|format(h.start_price) }}</td>
+          <td>{{ "%.2f"|format(h.end_price) }}</td>
+          <td class="{{ 'outcome-up' if h.abs_change > 0 else 'outcome-down' if h.abs_change < 0 else '' }}">
+            {% if h.pct_change is not none %}{{ "%+.1f"|format(h.pct_change * 100) }}%{% else %}n/a{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="field-caption">No holding has enough price history in this window to measure.</p>
+    {% endif %}
+
+    {% if performance.excluded_tickers %}
+    <p class="field-caption">Excluded (too little price history in {{ performance.period }}): {{ performance.excluded_tickers|join(", ") }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if review.holdings %}
   <h3>Holdings</h3>
   <table>

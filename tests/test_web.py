@@ -5,7 +5,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from marketsignal.data.yfinance_source import TickerNotFoundError
-from marketsignal.models import RawFinancials
+from marketsignal.models import PricePoint, RawFinancials
 from marketsignal.web.app import app
 
 client = TestClient(app)
@@ -496,6 +496,69 @@ def test_portfolio_review_unknown_slug_redirects_to_list(monkeypatch, tmp_path):
 
     assert response.status_code == 303
     assert response.headers["location"] == "/portfolios"
+
+
+def _rising_series(start: float, end: float, days: int = 300) -> list[PricePoint]:
+    last = dt.date.today()
+    return [
+        PricePoint(
+            date=(last - dt.timedelta(days=days - 1 - i)).isoformat(),
+            close=start + (end - start) * i / (days - 1),
+        )
+        for i in range(days)
+    ]
+
+
+@patch("marketsignal.web.app.fetch_price_history")
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_portfolio_review_shows_performance_section(
+    mock_fetch, mock_history, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    client.post(
+        "/portfolios/save",
+        data={"name": "Movers", "tickers": "AAPL, MSFT"},
+        follow_redirects=False,
+    )
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+    mock_history.side_effect = [
+        _rising_series(100.0, 150.0),  # AAPL +50%
+        _rising_series(200.0, 180.0),  # MSFT -10%
+    ]
+
+    response = client.get("/portfolios/movers/review?period=1Y")
+
+    assert response.status_code == 200
+    assert ">Performance<" in response.text
+    assert "1 up, 1 down, 0 flat" in response.text
+    assert "+50.0%" in response.text
+    assert "-10.0%" in response.text
+    # the requested period is the active toggle
+    assert 'range-btn range-btn-active"' in response.text
+    assert "review?period=6M" in response.text  # other periods are linked
+
+
+@patch("marketsignal.web.app.fetch_price_history")
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_portfolio_review_performance_lists_tickers_without_history_as_excluded(
+    mock_fetch, mock_history, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    client.post(
+        "/portfolios/save",
+        data={"name": "Partial", "tickers": "AAPL, MSFT"},
+        follow_redirects=False,
+    )
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+    mock_history.side_effect = [_rising_series(100.0, 120.0), []]
+
+    response = client.get("/portfolios/partial/review")
+
+    assert response.status_code == 200
+    assert "Excluded (too little price history" in response.text
+    assert "MSFT" in response.text
 
 
 def test_portfolios_delete_removes_it_and_redirects(monkeypatch, tmp_path):

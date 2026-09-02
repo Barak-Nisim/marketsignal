@@ -597,6 +597,9 @@ label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
 .range-pct-up { color: var(--accent); }
 .range-pct-down { color: var(--down); }
 .price-trend-box .sparkline { width: 100%; height: auto; }
+.range-toggle a.range-btn { text-decoration: none; }
+.perf-sparkline { margin: 0.4rem 0 0.9rem; }
+.perf-sparkline .sparkline { width: 100%; height: auto; }
 
 .outcomes-box {
   background: var(--tint-bg);
