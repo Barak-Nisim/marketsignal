@@ -109,6 +109,11 @@ def test_report_has_plain_language_info_tooltips(mock_fetch, monkeypatch, tmp_pa
     # a metric explanation (from METRIC_GLOSSARY["trailing_pe"]); substring chosen
     # to avoid apostrophes, which Jinja autoescaping turns into &#39; in the HTML
     assert "very low can also mean the market expects trouble ahead" in response.text
+    # tooltips deep-link into the /learn encyclopedia
+    assert "Learn more" in response.text
+    assert 'href="/learn#learn-scale"' in response.text
+    assert 'href="/learn#learn-valuation"' in response.text
+    assert 'href="/learn#learn-trailing-pe"' in response.text
 
 
 @patch("marketsignal.web.app.fetch_price_history")

@@ -25,6 +25,7 @@ from marketsignal.data.yfinance_source import (
 )
 from marketsignal.education import (
     SCORE_SCALE_EXPLANATION,
+    concept_anchor,
     get_category_explanation,
     get_metric_explanation,
     learn_sections,
@@ -69,6 +70,8 @@ templates.env.filters["slugify"] = slugify
 templates.env.globals["category_explanation"] = get_category_explanation
 templates.env.globals["metric_explanation"] = get_metric_explanation
 templates.env.globals["score_scale_explanation"] = SCORE_SCALE_EXPLANATION
+# Anchor for the tooltip's "Learn more" deep-link into /learn; None if no entry.
+templates.env.globals["concept_anchor"] = concept_anchor
 app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
 

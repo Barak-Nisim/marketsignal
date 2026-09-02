@@ -1,6 +1,11 @@
-{% macro info_tip(text) %}
+{% macro info_tip(text, learn_anchor=None) %}
 <span class="info-tip-wrap">
   <button type="button" class="info-tip" aria-label="What is this?" aria-expanded="false">i</button>
-  <span class="info-tip-content" role="tooltip">{{ text }}</span>
+  <span class="info-tip-content" role="tooltip">
+    {{ text }}
+    {% if learn_anchor %}
+    <a class="info-tip-more" href="/learn#{{ learn_anchor }}">Learn more &rarr;</a>
+    {% endif %}
+  </span>
 </span>
 {% endmacro %}

@@ -798,6 +798,15 @@ dl.meta dd { margin: 0; }
   line-height: 1.4;
 }
 .info-tip-content.is-open { display: block; }
+.info-tip-more {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.info-tip-more:hover { text-decoration: underline; }
 
 /* ---------- /learn encyclopedia ---------- */
 

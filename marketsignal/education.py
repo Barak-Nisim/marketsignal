@@ -466,6 +466,13 @@ def get_concept(key: str) -> Concept | None:
     return CONCEPTS.get(key)
 
 
+def concept_anchor(key: str) -> str | None:
+    """The /learn anchor for a category id or metric key, or None if the
+    key has no encyclopedia entry (so a caller can skip the link)."""
+    concept = CONCEPTS.get(key)
+    return concept.anchor if concept else None
+
+
 def learn_sections() -> list[dict]:
     """The /learn page's structure: each category concept with its own
     metric concepts nested, in scoring order."""
