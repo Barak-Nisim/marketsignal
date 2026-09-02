@@ -27,6 +27,7 @@ from marketsignal.education import (
     SCORE_SCALE_EXPLANATION,
     get_category_explanation,
     get_metric_explanation,
+    learn_sections,
 )
 from marketsignal.favorites import add_favorite, is_favorite, list_favorites, remove_favorite
 from marketsignal.history import list_recent_tickers, load_history, record_and_diff
@@ -104,6 +105,18 @@ def landing(request: Request):
 @app.get("/how-it-works", response_class=HTMLResponse)
 def how_it_works(request: Request):
     return templates.TemplateResponse(request, "how_it_works.html", {})
+
+
+@app.get("/learn", response_class=HTMLResponse)
+def learn(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "learn.html",
+        {
+            "sections": learn_sections(),
+            "score_scale_explanation": SCORE_SCALE_EXPLANATION,
+        },
+    )
 
 
 @app.get("/app", response_class=HTMLResponse)

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}MarketSignal: Learn the metrics{% endblock %}
+{% block content %}
+<div class="container learn">
+  <section class="page-header">
+    <p class="eyebrow">Encyclopedia</p>
+    <h1>What every score actually means</h1>
+    <p class="hero-sub">
+      Plain-language explanations of the five categories and every metric behind
+      them, with a picture of the idea and links to read further. The same text
+      appears in the tooltips on a research report.
+    </p>
+  </section>
+
+  <div class="learn-intro">
+    <h2>The 0&ndash;4 scale</h2>
+    <p>{{ score_scale_explanation }}</p>
+  </div>
+
+  <nav class="learn-toc" aria-label="Categories">
+    {% for section in sections %}
+    <a href="#{{ section.category.anchor }}">{{ section.category.title }}</a>
+    {% endfor %}
+  </nav>
+
+  {% for section in sections %}
+  <section class="learn-category">
+    <h2 id="{{ section.category.anchor }}">{{ section.category.title }}</h2>
+    <div class="learn-entry">
+      <div class="learn-diagram-wrap">{{ section.category.diagram|safe }}</div>
+      <div class="learn-body">
+        <p>{{ section.category.explanation }}</p>
+        {% if section.category.references %}
+        <p class="learn-refs">
+          {% for ref in section.category.references %}
+          <a href="{{ ref.url }}" target="_blank" rel="noopener noreferrer">{{ ref.title }}</a>
+          {%- if not loop.last %} &middot; {% endif %}
+          {% endfor %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% for metric in section.metrics %}
+    <div class="learn-entry learn-entry-metric">
+      <div class="learn-diagram-wrap">{{ metric.diagram|safe }}</div>
+      <div class="learn-body">
+        <h3 id="{{ metric.anchor }}">{{ metric.title }}</h3>
+        <p>{{ metric.explanation }}</p>
+        {% if metric.references %}
+        <p class="learn-refs">
+          {% for ref in metric.references %}
+          <a href="{{ ref.url }}" target="_blank" rel="noopener noreferrer">{{ ref.title }}</a>
+          {%- if not loop.last %} &middot; {% endif %}
+          {% endfor %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+
+  <p class="field-caption">
+    Explanations describe concepts, not any single stock's numbers, and never a
+    signal to buy or sell. Exact scoring thresholds live in the
+    <a href="https://github.com/Barak-Nisim/marketsignal/blob/main/docs/scoring_methodology.md">scoring methodology</a>.
+  </p>
+</div>
+{% endblock %}

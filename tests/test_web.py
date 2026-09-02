@@ -498,6 +498,29 @@ def test_portfolio_review_unknown_slug_redirects_to_list(monkeypatch, tmp_path):
     assert response.headers["location"] == "/portfolios"
 
 
+def test_learn_page_has_an_entry_with_a_diagram_for_every_concept():
+    from marketsignal.education import CONCEPTS, learn_sections
+
+    response = client.get("/learn")
+
+    assert response.status_code == 200
+    assert "The 0" in response.text and "scale" in response.text  # intro section
+    for concept in CONCEPTS.values():
+        assert f'id="{concept.anchor}"' in response.text
+        # explanation text is rendered (first clause, apostrophe-free slice)
+        assert concept.explanation[:40].split("'")[0] in response.text
+    # one SVG diagram per concept, at least
+    assert response.text.count("<svg") >= len(learn_sections())
+    for section in learn_sections():
+        assert f">{section['category'].title}<" in response.text
+
+
+def test_learn_is_linked_from_the_nav():
+    response = client.get("/")
+
+    assert 'href="/learn"' in response.text
+
+
 def _rising_series(start: float, end: float, days: int = 300) -> list[PricePoint]:
     last = dt.date.today()
     return [
