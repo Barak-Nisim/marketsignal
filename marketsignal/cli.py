@@ -7,11 +7,21 @@ import sys
 from pathlib import Path
 
 from marketsignal.accuracy import compute_accuracy_summary
-from marketsignal.data.yfinance_source import TickerNotFoundError, fetch_raw_financials
+from marketsignal.data.yfinance_source import (
+    TickerNotFoundError,
+    fetch_price_history,
+    fetch_raw_financials,
+)
 from marketsignal.favorites import add_favorite, list_favorites, remove_favorite
 from marketsignal.history import load_history, record_and_diff
 from marketsignal.journal import add_journal_entry, load_journal
 from marketsignal.outcomes import compute_outcomes
+from marketsignal.portfolio_performance import (
+    DEFAULT_PERIOD,
+    PERIOD_LABELS,
+    SHARES_PER_HOLDING,
+    build_portfolio_performance,
+)
 from marketsignal.portfolio_review import build_portfolio_review
 from marketsignal.portfolios import (
     delete_portfolio,
@@ -76,6 +86,16 @@ def _build_parser() -> argparse.ArgumentParser:
     portfolio_action.add_parser("list", help="List saved portfolios")
     portfolio_review = portfolio_action.add_parser("review", help="Review a saved portfolio")
     portfolio_review.add_argument("name")
+    portfolio_performance = portfolio_action.add_parser(
+        "performance", help="Show how a portfolio's holdings moved over a tracked period"
+    )
+    portfolio_performance.add_argument("name")
+    portfolio_performance.add_argument(
+        "--period",
+        default=DEFAULT_PERIOD,
+        choices=PERIOD_LABELS,
+        help=f"Tracked window (default: {DEFAULT_PERIOD})",
+    )
     portfolio_delete = portfolio_action.add_parser("delete", help="Delete a saved portfolio")
     portfolio_delete.add_argument("name")
 
@@ -213,6 +233,8 @@ def _run_portfolio(args: argparse.Namespace) -> int:
         print(f"Deleted portfolio '{args.name}'.", file=sys.stderr)
     elif args.portfolio_action == "review":
         return _run_portfolio_review(args.name)
+    elif args.portfolio_action == "performance":
+        return _run_portfolio_performance(args.name, args.period)
 
     return 0
 
@@ -267,6 +289,51 @@ def _run_portfolio_review(name: str) -> int:
             else:
                 score_text = "n/a"
             print(f"- {h.financials.ticker} ({h.financials.company_name}): {score_text}")
+
+    return 0
+
+
+def _run_portfolio_performance(name: str, period: str) -> int:
+    portfolio = get_portfolio(name)
+    if portfolio is None:
+        print(f"No portfolio named '{name}'.", file=sys.stderr)
+        return 1
+
+    histories = {ticker: fetch_price_history(ticker) for ticker in portfolio.tickers}
+    performance = build_portfolio_performance(portfolio, histories, period)
+
+    print(f"# {performance.portfolio_name} -- {performance.period} performance\n")
+    print(f"Every holding valued at {SHARES_PER_HOLDING} shares.\n")
+
+    if performance.holdings:
+        if performance.pct_change is not None:
+            print(
+                f"Portfolio value: {performance.start_total:,.2f} -> "
+                f"{performance.end_total:,.2f} "
+                f"({performance.pct_change * 100:+.1f}%, {performance.abs_change:+,.2f})\n"
+            )
+        else:
+            print(
+                f"Portfolio value: {performance.start_total:,.2f} -> "
+                f"{performance.end_total:,.2f} ({performance.abs_change:+,.2f})\n"
+            )
+        print(
+            f"{performance.up_count} up, {performance.down_count} down, "
+            f"{performance.flat_count} flat\n"
+        )
+
+        print("Holdings (best to worst):")
+        for h in performance.holdings:
+            pct = f"{h.pct_change * 100:+.1f}%" if h.pct_change is not None else "n/a"
+            print(f"- {h.ticker}: {h.start_price:,.2f} -> {h.end_price:,.2f} ({pct})")
+    else:
+        print("No holding had enough price history in this window to measure.")
+
+    if performance.excluded_tickers:
+        print(
+            f"\nExcluded (too little price history in the window): "
+            f"{', '.join(performance.excluded_tickers)}"
+        )
 
     return 0
 

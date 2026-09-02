@@ -1,9 +1,23 @@
+import datetime as dt
 from dataclasses import replace
 from unittest.mock import patch
 
 from marketsignal.cli import main
 from marketsignal.data.yfinance_source import TickerNotFoundError
-from marketsignal.models import RawFinancials
+from marketsignal.models import PricePoint, RawFinancials
+
+
+def _price_series(start_price: float, end_price: float, days: int = 300) -> list[PricePoint]:
+    """Daily closes moving linearly from start to end, oldest first, ending today.
+    Kept under a year so the default 1Y window keeps both exact endpoints."""
+    end = dt.date.today()
+    return [
+        PricePoint(
+            date=(end - dt.timedelta(days=days - 1 - i)).isoformat(),
+            close=start_price + (end_price - start_price) * i / (days - 1),
+        )
+        for i in range(days)
+    ]
 
 FAKE_FINANCIALS = RawFinancials(
     ticker="AAPL",
@@ -332,6 +346,57 @@ def test_portfolio_review_unknown_name_returns_error(capsys, monkeypatch, tmp_pa
     monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
 
     exit_code = main(["portfolio", "review", "Nope"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "No portfolio named 'Nope'." in captured.err
+
+
+@patch("marketsignal.cli.fetch_price_history")
+def test_portfolio_performance_prints_totals_and_holdings(
+    mock_history, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+    main(["portfolio", "create", "Movers", "AAPL", "MSFT"])
+    mock_history.side_effect = [
+        _price_series(100.0, 150.0),  # AAPL up 50%
+        _price_series(200.0, 180.0),  # MSFT down 10%
+    ]
+
+    exit_code = main(["portfolio", "performance", "Movers", "--period", "1Y"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "# Movers -- 1Y performance" in captured.out
+    assert "Every holding valued at 100 shares." in captured.out
+    assert "Portfolio value:" in captured.out
+    assert "1 up, 1 down, 0 flat" in captured.out
+    assert "AAPL: 100.00 -> 150.00 (+50.0%)" in captured.out
+    assert "MSFT: 200.00 -> 180.00 (-10.0%)" in captured.out
+    # sorted best to worst
+    assert captured.out.index("AAPL:") < captured.out.index("MSFT:")
+
+
+@patch("marketsignal.cli.fetch_price_history")
+def test_portfolio_performance_excludes_ticker_with_no_history(
+    mock_history, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+    main(["portfolio", "create", "Partial", "AAPL", "BOGUS"])
+    mock_history.side_effect = [_price_series(100.0, 120.0), []]
+
+    exit_code = main(["portfolio", "performance", "Partial"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "AAPL: 100.00 -> 120.00" in captured.out
+    assert "Excluded (too little price history in the window): BOGUS" in captured.out
+
+
+def test_portfolio_performance_unknown_name_returns_error(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    exit_code = main(["portfolio", "performance", "Nope"])
 
     captured = capsys.readouterr()
     assert exit_code == 1
