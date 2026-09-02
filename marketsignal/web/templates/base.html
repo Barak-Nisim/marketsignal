@@ -93,5 +93,36 @@
       targets.forEach(function (el) { observer.observe(el); });
     })();
   </script>
+
+  <script>
+    (function () {
+      function closeAllTips(except) {
+        document.querySelectorAll(".info-tip-content.is-open").forEach(function (content) {
+          if (content === except) return;
+          content.classList.remove("is-open");
+          var btn = content.previousElementSibling;
+          if (btn) btn.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      document.addEventListener("click", function (event) {
+        var btn = event.target.closest(".info-tip");
+        if (btn) {
+          var content = btn.nextElementSibling;
+          var willOpen = !content.classList.contains("is-open");
+          closeAllTips(willOpen ? content : null);
+          content.classList.toggle("is-open", willOpen);
+          btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+          event.stopPropagation();
+          return;
+        }
+        if (!event.target.closest(".info-tip-content")) closeAllTips();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeAllTips();
+      });
+    })();
+  </script>
 </body>
 </html>

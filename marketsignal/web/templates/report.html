@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
 {% block title %}MarketSignal: {{ result.financials.company_name }} ({{ result.financials.ticker }}){% endblock %}
 {% block content %}
 <div class="container">
@@ -140,13 +141,13 @@
   </div>
   {% endif %}
 
-  <h3>Category scores</h3>
+  <h3>Category scores {{ macros.info_tip(score_scale_explanation) }}</h3>
   <table>
     <thead><tr><th>Category</th><th>Score</th><th>Signal</th></tr></thead>
     <tbody>
       {% for category in result.category_scores %}
       <tr>
-        <td>{{ category.name }}</td>
+        <td>{{ category.name }}{% if category_explanation(category.id) %}{{ macros.info_tip(category_explanation(category.id)) }}{% endif %}</td>
         {% if category.score is not none %}
         <td>{{ "%.2f"|format(category.score) }}</td>
         <td>{{ tier_for_score(category.score) }}</td>
@@ -161,13 +162,13 @@
 
   <h3>Metric detail</h3>
   {% for category in result.category_scores %}
-  <h4>{{ category.name }}</h4>
+  <h4>{{ category.name }}{% if category_explanation(category.id) %}{{ macros.info_tip(category_explanation(category.id)) }}{% endif %}</h4>
   <table>
     <thead><tr><th>Metric</th><th>Value</th><th>Signal</th></tr></thead>
     <tbody>
       {% for metric in category.metric_scores %}
       <tr>
-        <td>{{ metric.label }}</td>
+        <td>{{ metric.label }}{% if metric_explanation(metric.key) %}{{ macros.info_tip(metric_explanation(metric.key)) }}{% endif %}</td>
         <td>{{ format_value(metric.key, metric.value) }}</td>
         <td>{% if metric.score is not none %}{{ signal_levels[metric.score] }}{% else %}n/a{% endif %}</td>
       </tr>

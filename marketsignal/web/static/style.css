@@ -746,6 +746,56 @@ dl.meta dd { margin: 0; }
 
 .disclaimer { color: var(--muted); font-size: 0.8rem; margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 
+/* ---------- info tooltips ----------
+   Click-to-toggle, not hover-only, so they work on mobile/touch and are
+   keyboard/screen-reader accessible -- a real <button>, not a CSS
+   hover trick. Toggled by the shared handler in base.html. */
+
+.info-tip-wrap { position: relative; display: inline-block; margin-left: 0.3rem; }
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.info-tip:hover, .info-tip:focus-visible, .info-tip.is-active { border-color: var(--accent); color: var(--accent); }
+
+.info-tip-content {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 260px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.35);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+.info-tip-content.is-open { display: block; }
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 900px) {

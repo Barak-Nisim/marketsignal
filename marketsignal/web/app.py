@@ -23,6 +23,11 @@ from marketsignal.data.yfinance_source import (
     fetch_price_history,
     fetch_raw_financials,
 )
+from marketsignal.education import (
+    SCORE_SCALE_EXPLANATION,
+    get_category_explanation,
+    get_metric_explanation,
+)
 from marketsignal.favorites import add_favorite, is_favorite, list_favorites, remove_favorite
 from marketsignal.history import list_recent_tickers, load_history, record_and_diff
 from marketsignal.journal import add_journal_entry, load_journal
@@ -52,6 +57,12 @@ TREND_WINDOW = 10  # most recent research runs shown in a trend sparkline
 app = FastAPI(title="MarketSignal")
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 templates.env.filters["slugify"] = slugify
+# Plain-language glossary lookups for the inline info tooltips (see education.py).
+# Registered as globals so any template can call them; they return None when a
+# category/metric has no entry, and the templates skip the tooltip in that case.
+templates.env.globals["category_explanation"] = get_category_explanation
+templates.env.globals["metric_explanation"] = get_metric_explanation
+templates.env.globals["score_scale_explanation"] = SCORE_SCALE_EXPLANATION
 app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
 

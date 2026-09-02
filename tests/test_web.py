@@ -91,6 +91,26 @@ def test_research_renders_report(mock_fetch, monkeypatch, tmp_path):
     assert "Price history" not in response.text  # no price history available (autouse default)
 
 
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_report_has_plain_language_info_tooltips(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    # the tooltip component rendered at all
+    assert 'class="info-tip"' in response.text
+    # score-scale explanation on the Category scores heading
+    assert "scored 0 to 4" in response.text
+    # a category explanation (from CATEGORY_GLOSSARY["valuation"])
+    assert "How expensive the stock is relative to the business behind it" in response.text
+    # a metric explanation (from METRIC_GLOSSARY["trailing_pe"]); substring chosen
+    # to avoid apostrophes, which Jinja autoescaping turns into &#39; in the HTML
+    assert "very low can also mean the market expects trouble ahead" in response.text
+
+
 @patch("marketsignal.web.app.fetch_price_history")
 @patch("marketsignal.web.app.fetch_raw_financials")
 def test_research_shows_price_trend_with_range_toggle(
