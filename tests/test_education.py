@@ -1,9 +1,12 @@
 from marketsignal.education import (
     CATEGORY_GLOSSARY,
+    CONCEPTS,
     METRIC_GLOSSARY,
     SCORE_SCALE_EXPLANATION,
     get_category_explanation,
+    get_concept,
     get_metric_explanation,
+    learn_sections,
 )
 from marketsignal.models import RawFinancials
 from marketsignal.scoring import score_financials
@@ -91,3 +94,64 @@ def test_no_glossary_text_uses_em_dash():
 
     for text in all_text:
         assert "—" not in text
+
+
+# --- encyclopedia / /learn ---
+
+
+def _real_keys():
+    result = _real_result()
+    category_ids = [c.id for c in result.category_scores]
+    metric_keys = [m.key for c in result.category_scores for m in c.metric_scores]
+    return result, category_ids, metric_keys
+
+
+def test_every_real_category_and_metric_has_an_encyclopedia_concept():
+    _result, category_ids, metric_keys = _real_keys()
+
+    for key in category_ids + metric_keys:
+        assert get_concept(key) is not None, f"no encyclopedia Concept for {key}"
+
+
+def test_no_stale_concepts_beyond_real_categories_and_metrics():
+    _result, category_ids, metric_keys = _real_keys()
+
+    assert set(CONCEPTS) == set(category_ids) | set(metric_keys)
+
+
+def test_every_concept_has_a_diagram_and_at_least_one_reference():
+    for key, concept in CONCEPTS.items():
+        assert "<svg" in concept.diagram, f"{key} has no SVG diagram"
+        assert concept.references, f"{key} has no references"
+        for ref in concept.references:
+            assert ref.title
+            assert ref.url.startswith("https://")
+
+
+def test_concept_explanation_is_the_glossary_text_verbatim():
+    for key, concept in CONCEPTS.items():
+        source = CATEGORY_GLOSSARY if concept.kind == "category" else METRIC_GLOSSARY
+        assert concept.explanation == source[key]
+
+
+def test_concept_anchors_are_unique_and_slug_shaped():
+    anchors = [c.anchor for c in CONCEPTS.values()]
+
+    assert len(anchors) == len(set(anchors))
+    for anchor in anchors:
+        assert anchor.startswith("learn-")
+        assert anchor == anchor.lower()
+        assert "_" not in anchor
+
+
+def test_learn_sections_match_the_real_scoring_structure():
+    result, _category_ids, _metric_keys = _real_keys()
+    sections = learn_sections()
+
+    assert [s["category"].key for s in sections] == [c.id for c in result.category_scores]
+    for section, category in zip(sections, result.category_scores):
+        assert section["category"].kind == "category"
+        assert [m.key for m in section["metrics"]] == [
+            m.key for m in category.metric_scores
+        ]
+        assert all(m.kind == "metric" for m in section["metrics"])
