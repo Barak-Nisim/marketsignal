@@ -70,7 +70,12 @@ def fetch_raw_financials(ticker: str) -> RawFinancials:
     if not company_name or info.get("regularMarketPrice") is None:
         raise TickerNotFoundError(ticker)
 
-    history = yf_ticker.history(period="1y")
+    try:
+        history = yf_ticker.history(period="1y")
+    except Exception:  # noqa: BLE001 -- price-change fields are optional; same "any
+        # failure -> no data" posture as fetch_price_history. A Yahoo hiccup here
+        # (rate limiting is common) must not 500 an otherwise-complete research run.
+        history = None
 
     return RawFinancials(
         ticker=ticker,

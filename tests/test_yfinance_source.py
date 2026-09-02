@@ -82,6 +82,31 @@ def test_fetch_raw_financials_raises_when_yfinance_errors(mock_ticker_cls):
         fetch_raw_financials("AAPL")
 
 
+class _InfoOkHistoryRaisesTicker:
+    """`.info` succeeds but `.history()` fails -- the shape of a partial Yahoo
+    outage / rate limit. The research run should still complete."""
+
+    info = FAKE_INFO
+
+    def history(self, *args, **kwargs):
+        raise RuntimeError("YFRateLimitError: Too Many Requests. Rate limited.")
+
+
+@patch("marketsignal.data.yfinance_source.yf.Ticker")
+def test_fetch_raw_financials_survives_history_fetch_failure(mock_ticker_cls):
+    mock_ticker_cls.return_value = _InfoOkHistoryRaisesTicker()
+
+    financials = fetch_raw_financials("AAPL")
+
+    # core info-derived fields still populated
+    assert financials.company_name == "Test Company Inc."
+    assert financials.trailing_pe == 22.5
+    # price-change fields degrade to None instead of raising
+    assert financials.price_change_3mo is None
+    assert financials.price_change_6mo is None
+    assert financials.price_change_12mo is None
+
+
 def test_price_change_handles_empty_history():
     from marketsignal.data.yfinance_source import _price_change
 
