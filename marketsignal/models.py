@@ -161,6 +161,63 @@ class PortfolioReview:
 
 
 @dataclass(frozen=True)
+class HoldingPerformance:
+    """One ticker's price move over a tracked period, valued at a fixed
+    SHARES_PER_HOLDING shares (see portfolio_performance.py for why the
+    share count is fixed rather than a real position size)."""
+
+    ticker: str
+    start_date: str
+    end_date: str
+    start_price: float
+    end_price: float
+    start_value: float
+    end_value: float
+    abs_change: float
+    pct_change: float | None  # None if the start price was missing or zero
+
+
+@dataclass(frozen=True)
+class PortfolioValuePoint:
+    """One day's total portfolio value, oldest-first when returned as a
+    series. Only dates where every included holding has a close appear, so
+    the line never dips just because one ticker did not trade that day."""
+
+    date: str
+    value: float
+
+
+@dataclass(frozen=True)
+class PortfolioPerformance:
+    """Which holdings gained and which lost over a tracked period, and
+    whether the portfolio as a whole went up or down. Deterministic math
+    over already-fetched price history -- no scoring, no AI, no forecast."""
+
+    portfolio_name: str
+    period: str
+    start_total: float
+    end_total: float
+    abs_change: float
+    pct_change: float | None
+    holdings: tuple[HoldingPerformance, ...]  # best pct_change first
+    best_performers: tuple[HoldingPerformance, ...]
+    worst_performers: tuple[HoldingPerformance, ...]
+    up_count: int
+    down_count: int
+    flat_count: int
+    excluded_tickers: tuple[str, ...]  # too little price history in the window
+    value_series: tuple[PortfolioValuePoint, ...]
+
+    @property
+    def direction(self) -> str:
+        if self.abs_change > 0:
+            return "up"
+        if self.abs_change < 0:
+            return "down"
+        return "flat"
+
+
+@dataclass(frozen=True)
 class ThesisDelta:
     """A deterministic diff between two AI-generated theses for the same
     ticker: what was added or dropped, not a re-narrated comparison. No AI
