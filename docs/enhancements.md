@@ -18,7 +18,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 
 8. **[Shipped]** ~~Watchlist support (multiple tickers per run)~~ Shipped as named, saved portfolios (`/portfolios`) rather than a one-off multi-ticker research run -- see #40 below for the fuller writeup. A single research run is still single-ticker by design; a portfolio is the multi-ticker surface.
 9. **[Moderate]** A digest mode: run against a saved watchlist on a schedule and produce one summary of everything that changed.
-10. **[Minor]** CSV/JSON export of a report for tracking in a spreadsheet.
+10. **[Shipped]** ~~CSV/JSON export of a report for tracking in a spreadsheet.~~ Shipped via `report/export.py`: `marketsignal research TICKER --format csv|json` (default stays `markdown`), and an "Export: CSV / JSON" link on the web report page hitting `GET /export/{ticker}`. Exports the deterministic score data only -- ticker, overall score/tier, category scores (CSV, one row) or every metric plus any sector comparison (JSON) -- never the AI thesis prose, which has no natural row-and-column shape; `--format csv/json` skips the AI call entirely rather than fetching and discarding it.
 11. **[Moderate]** Side-by-side comparison view for two tickers.
 12. **[Minor]** A small script/cron helper to run research against a watchlist automatically and just log to history, without opening the browser.
 

@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 from dataclasses import replace
 from unittest.mock import patch
 
@@ -114,6 +115,58 @@ def test_research_omits_sector_comparison_without_a_sector(mock_fetch, monkeypat
 
     assert response.status_code == 200
     assert "sector median" not in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_report_links_to_csv_and_json_export(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert 'href="/export/AAPL?format=csv"' in response.text
+    assert 'href="/export/AAPL?format=json"' in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_export_csv_downloads_a_data_row(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    response = client.get("/export/AAPL?format=csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert 'attachment; filename="AAPL.csv"' in response.headers["content-disposition"]
+    assert "AAPL,Apple Inc.,Technology" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_export_json_downloads_the_full_structured_result(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    response = client.get("/export/AAPL?format=json")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert 'attachment; filename="AAPL.json"' in response.headers["content-disposition"]
+    payload = json.loads(response.text)
+    assert payload["ticker"] == "AAPL"
+    assert payload["categories"]
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_export_unknown_ticker_redirects_to_the_form(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    mock_fetch.side_effect = TickerNotFoundError("BOGUS")
+
+    response = client.get("/export/BOGUS?format=csv", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/app?ticker=BOGUS"
 
 
 @patch("marketsignal.web.app.fetch_raw_financials")

@@ -31,6 +31,13 @@
     </dd>
   </dl>
 
+  <p class="export-links">
+    Export:
+    <a href="/export/{{ result.financials.ticker }}?format=csv">CSV</a>
+    &middot;
+    <a href="/export/{{ result.financials.ticker }}?format=json">JSON</a>
+  </p>
+
   {% if price_ranges %}
   <div class="price-trend-box">
     <div class="price-trend-header">

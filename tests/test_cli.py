@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 from dataclasses import replace
 from unittest.mock import patch
 
@@ -46,6 +47,37 @@ def test_research_no_ai_prints_report(mock_fetch, capsys, monkeypatch, tmp_path)
     assert exit_code == 0
     assert "MarketSignal Research Brief: Apple Inc. (AAPL)" in captured.out
     mock_fetch.assert_called_once_with("AAPL")
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_csv_format_prints_a_data_row_without_fetching_ai(
+    mock_fetch, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    # --format csv is given with no --no-ai; the AI narrator must still never
+    # be reached, or this test would need ANTHROPIC_API_KEY / a narrator mock.
+    exit_code = main(["research", "AAPL", "--format", "csv"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "ticker,company_name" in captured.out
+    assert "AAPL,Apple Inc.,Technology" in captured.out
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_research_json_format_writes_to_output_file(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.return_value = FAKE_FINANCIALS
+    output_path = tmp_path / "report.json"
+
+    exit_code = main(["research", "AAPL", "--format", "json", "--output", str(output_path)])
+
+    assert exit_code == 0
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["ticker"] == "AAPL"
+    assert payload["sector_comparisons"]  # Technology sector, trailing_pe present
 
 
 @patch("marketsignal.cli.fetch_raw_financials")

@@ -808,6 +808,9 @@ dl.meta dd { margin: 0; }
 }
 .info-tip-more:hover { text-decoration: underline; }
 
+.export-links { font-size: 0.85rem; color: var(--muted); margin: 0.25rem 0 1.25rem; }
+.export-links a { color: var(--accent); }
+
 /* ---------- /learn encyclopedia ---------- */
 
 .learn-intro {

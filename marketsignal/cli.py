@@ -29,8 +29,10 @@ from marketsignal.portfolios import (
     list_portfolios,
     save_portfolio,
 )
+from marketsignal.report.export import render_csv, render_json
 from marketsignal.report.markdown import render
 from marketsignal.scoring import score_financials, tier_for_score
+from marketsignal.sector_benchmarks import build_valuation_sector_view
 from marketsignal.thesis_history import (
     load_thesis_history,
     previous_claims,
@@ -55,6 +57,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "-o",
         metavar="PATH",
         help="Write the report to a file instead of stdout",
+    )
+    research.add_argument(
+        "--format",
+        choices=("markdown", "csv", "json"),
+        default="markdown",
+        help="Output format (default: markdown). csv/json export the deterministic "
+        "score data only, for tracking outside the app -- no AI thesis is fetched.",
     )
 
     serve = subparsers.add_parser("serve", help="Run the MarketSignal web UI locally")
@@ -111,6 +120,19 @@ def _run_research(args: argparse.Namespace) -> int:
 
     result = score_financials(financials)
     what_changed = record_and_diff(result)
+
+    if args.format in ("csv", "json"):
+        body = (
+            render_csv(result)
+            if args.format == "csv"
+            else render_json(result, build_valuation_sector_view(financials))
+        )
+        if args.output:
+            Path(args.output).write_text(body, encoding="utf-8")
+            print(f"Report written to {args.output}", file=sys.stderr)
+        else:
+            print(body)
+        return 0
 
     ai_narrative = None
     thesis_delta = None

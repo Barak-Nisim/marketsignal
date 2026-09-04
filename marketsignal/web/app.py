@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -49,6 +49,7 @@ from marketsignal.portfolios import (
     slugify,
 )
 from marketsignal.price_trend import build_price_ranges
+from marketsignal.report.export import render_csv, render_json
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, signal_bucket, tier_for_score
 from marketsignal.sector_benchmarks import build_valuation_sector_view
@@ -209,6 +210,34 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "price_ranges": price_ranges,
             "sector_comparisons": sector_comparisons,
         },
+    )
+
+
+@app.get("/export/{ticker}")
+def export_report(ticker: str, format: str = "csv"):
+    """Downloads the deterministic score data for a ticker as CSV or JSON --
+    no AI thesis is fetched, since neither export format has a natural place
+    for prose. Re-fetches and re-scores rather than reusing a cached report,
+    same as every other route here."""
+    try:
+        financials = fetch_raw_financials(ticker)
+    except TickerNotFoundError:
+        return RedirectResponse(url=f"/app?ticker={ticker.upper()}", status_code=303)
+
+    result = score_financials(financials)
+
+    if format == "json":
+        body = render_json(result, build_valuation_sector_view(financials))
+        media_type = "application/json"
+    else:
+        body = render_csv(result)
+        media_type = "text/csv"
+
+    extension = "json" if format == "json" else "csv"
+    return Response(
+        content=body,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{financials.ticker}.{extension}"'},
     )
 
 
