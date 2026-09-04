@@ -20,6 +20,7 @@ from marketsignal.accuracy import compute_accuracy_summary
 from marketsignal.charts import sparkline_svg
 from marketsignal.comparison import build_comparison
 from marketsignal.data.yfinance_source import (
+    DataUnavailableError,
     TickerNotFoundError,
     fetch_price_history,
     fetch_raw_financials,
@@ -136,7 +137,7 @@ def compare_run(request: Request, ticker_a: str = Form(...), ticker_b: str = For
     for ticker in (ticker_a, ticker_b):
         try:
             results.append(score_financials(fetch_raw_financials(ticker)))
-        except TickerNotFoundError as exc:
+        except (TickerNotFoundError, DataUnavailableError) as exc:
             return templates.TemplateResponse(
                 request,
                 "compare.html",
@@ -199,7 +200,7 @@ def journal_add(ticker: str = Form(...), note: str = Form(...)):
 def research(request: Request, ticker: str = Form(...), use_ai: str | None = Form(None)):
     try:
         financials = fetch_raw_financials(ticker)
-    except TickerNotFoundError as exc:
+    except (TickerNotFoundError, DataUnavailableError) as exc:
         return templates.TemplateResponse(
             request,
             "app_form.html",
@@ -258,7 +259,7 @@ def export_report(ticker: str, format: str = "csv"):
     same as every other route here."""
     try:
         financials = fetch_raw_financials(ticker)
-    except TickerNotFoundError:
+    except (TickerNotFoundError, DataUnavailableError):
         return RedirectResponse(url=f"/app?ticker={ticker.upper()}", status_code=303)
 
     result = score_financials(financials)
@@ -311,7 +312,7 @@ def portfolio_review_page(request: Request, slug: str, period: str = "1Y"):
     for ticker in portfolio.tickers:
         try:
             financials = fetch_raw_financials(ticker)
-        except TickerNotFoundError:
+        except (TickerNotFoundError, DataUnavailableError):
             failed_tickers.append(ticker)
             continue
         result = score_financials(financials)

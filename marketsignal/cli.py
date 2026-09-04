@@ -9,6 +9,7 @@ from pathlib import Path
 from marketsignal.accuracy import compute_accuracy_summary
 from marketsignal.comparison import build_comparison
 from marketsignal.data.yfinance_source import (
+    DataUnavailableError,
     TickerNotFoundError,
     fetch_price_history,
     fetch_raw_financials,
@@ -125,7 +126,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def _run_research(args: argparse.Namespace) -> int:
     try:
         financials = fetch_raw_financials(args.ticker)
-    except TickerNotFoundError as exc:
+    except (TickerNotFoundError, DataUnavailableError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
@@ -229,7 +230,7 @@ def _run_compare(args: argparse.Namespace) -> int:
     for ticker in (args.ticker_a, args.ticker_b):
         try:
             results.append(score_financials(fetch_raw_financials(ticker)))
-        except TickerNotFoundError as exc:
+        except (TickerNotFoundError, DataUnavailableError) as exc:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
 
@@ -304,7 +305,7 @@ def _run_portfolio_review(name: str) -> int:
     for ticker in portfolio.tickers:
         try:
             financials = fetch_raw_financials(ticker)
-        except TickerNotFoundError:
+        except (TickerNotFoundError, DataUnavailableError):
             failed_tickers.append(ticker)
             continue
         result = score_financials(financials)

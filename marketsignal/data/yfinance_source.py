@@ -8,16 +8,70 @@ fetch_raw_financials() directly rather than mocking yfinance internals.
 from __future__ import annotations
 
 import datetime as dt
+import time
 
+import requests
 import yfinance as yf
+from yfinance.exceptions import YFRateLimitError
 
 from marketsignal.models import PricePoint, RawFinancials
 
 
 class TickerNotFoundError(Exception):
+    """The ticker genuinely doesn't exist (or Yahoo has no data for it) --
+    retrying wouldn't help."""
+
     def __init__(self, ticker: str):
         super().__init__(f"Could not find market data for ticker '{ticker}'.")
         self.ticker = ticker
+
+
+class DataUnavailableError(Exception):
+    """A real ticker, but the data source was temporarily unreachable even
+    after retrying -- a rate limit or network blip, not a missing ticker.
+    Distinct from TickerNotFoundError so callers (and their error messages)
+    don't tell a user their ticker doesn't exist when it's Yahoo that's
+    having a moment; retrying again shortly is the right next step."""
+
+    def __init__(self, ticker: str):
+        super().__init__(
+            f"Market data for '{ticker}' is temporarily unavailable (Yahoo Finance "
+            "may be rate-limiting or briefly unreachable). Try again shortly."
+        )
+        self.ticker = ticker
+
+
+# Errors judged transient -- worth a retry with backoff rather than an
+# immediate failure. YFRateLimitError is yfinance's own signal for "you're
+# being rate-limited"; the requests.exceptions are generic network blips.
+# Anything else (a malformed ticker, YFTickerMissingError, ...) is not
+# retried -- retrying a genuinely bad ticker just wastes three round trips
+# to reach the same answer.
+_TRANSIENT_ERRORS = (
+    YFRateLimitError,
+    requests.exceptions.ConnectionError,
+    requests.exceptions.Timeout,
+    requests.exceptions.ChunkedEncodingError,
+)
+
+
+def _with_retry(fetch, *, attempts: int = 3, base_delay: float = 1.0, sleep=None):
+    """Calls fetch() up to `attempts` times, retrying only on _TRANSIENT_ERRORS
+    with exponential backoff (base_delay, base_delay*2, ...). Any other
+    exception propagates immediately on the first try. Re-raises the last
+    transient error once attempts are exhausted.
+
+    `sleep` defaults to time.sleep looked up at call time, not bound as a
+    default argument value, so tests that patch time.sleep on this module
+    (rather than passing sleep= explicitly) actually take effect."""
+    sleep = sleep or time.sleep
+    for attempt in range(attempts):
+        try:
+            return fetch()
+        except _TRANSIENT_ERRORS:
+            if attempt == attempts - 1:
+                raise
+            sleep(base_delay * (2**attempt))
 
 
 def _price_change(history, months_ago: int) -> float | None:
@@ -39,13 +93,14 @@ def _price_change(history, months_ago: int) -> float | None:
 
 def fetch_price_history(ticker: str) -> list[PricePoint]:
     """Daily closing prices for the ticker's full available history, oldest
-    first. Returns [] on any fetch failure or if the ticker has no price
-    history -- this feeds an optional chart, not a required field, so a
-    miss here should never break the rest of a research run."""
+    first. Returns [] on any fetch failure (after retrying a transient one)
+    or if the ticker has no price history -- this feeds an optional chart,
+    not a required field, so a miss here should never break the rest of a
+    research run."""
     ticker = ticker.strip().upper()
     try:
-        history = yf.Ticker(ticker).history(period="max")
-    except Exception:  # noqa: BLE001 -- same "any failure -> no data" posture as fetch_raw_financials
+        history = _with_retry(lambda: yf.Ticker(ticker).history(period="max"))
+    except Exception:  # noqa: BLE001 -- same "any failure -> no data" posture as before
         return []
 
     if history is None or history.empty:
@@ -62,8 +117,10 @@ def fetch_raw_financials(ticker: str) -> RawFinancials:
     yf_ticker = yf.Ticker(ticker)
 
     try:
-        info = yf_ticker.info
-    except Exception as exc:  # noqa: BLE001 -- any fetch failure maps to one clear error
+        info = _with_retry(lambda: yf_ticker.info)
+    except _TRANSIENT_ERRORS as exc:
+        raise DataUnavailableError(ticker) from exc
+    except Exception as exc:  # noqa: BLE001 -- anything else means no usable data for this ticker
         raise TickerNotFoundError(ticker) from exc
 
     company_name = info.get("longName") or info.get("shortName")
@@ -71,7 +128,7 @@ def fetch_raw_financials(ticker: str) -> RawFinancials:
         raise TickerNotFoundError(ticker)
 
     try:
-        history = yf_ticker.history(period="1y")
+        history = _with_retry(lambda: yf_ticker.history(period="1y"))
     except Exception:  # noqa: BLE001 -- price-change fields are optional; same "any
         # failure -> no data" posture as fetch_price_history. A Yahoo hiccup here
         # (rate limiting is common) must not 500 an otherwise-complete research run.

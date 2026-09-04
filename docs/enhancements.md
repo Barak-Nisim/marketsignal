@@ -45,8 +45,8 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 24. **[Moderate]** Dockerfile as an alternative to `pip install` for local setup.
 25. **[Minor]** Add `mypy` or `pyright` to CI alongside the existing `ruff` lint step.
 26. **[Moderate]** Snapshot/golden-file tests for the rendered report, to catch template regressions substring tests might miss.
-27. **[Moderate]** Retry/backoff handling for transient yfinance failures. Right now any fetch error, including a temporary network blip, is reported as "ticker not found," which is misleading for a real transient failure.
-28. **[Minor]** Split "ticker genuinely doesn't exist" from "data source temporarily unavailable" into two distinct error types, once #27 is in place, so the CLI/web error messages are accurate.
+27. **[Shipped]** ~~Retry/backoff handling for transient yfinance failures.~~ Shipped as `_with_retry()` in `data/yfinance_source.py`: up to 3 attempts with exponential backoff (1s, 2s), but only for errors judged transient (`yfinance`'s own `YFRateLimitError`, plus generic `requests` connection/timeout errors) -- a genuinely bad ticker fails on the first try rather than wasting three round trips to reach the same answer.
+28. **[Shipped]** ~~Split "ticker genuinely doesn't exist" from "data source temporarily unavailable" into two distinct error types.~~ Shipped alongside #27: `DataUnavailableError` is now raised (with an accurate, distinct message) when retries are exhausted on a transient failure, separate from `TickerNotFoundError`. Every CLI and web call site that used to catch only `TickerNotFoundError` now catches both.
 
 ## Integrations
 
