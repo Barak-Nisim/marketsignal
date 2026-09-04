@@ -30,6 +30,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 16. **[Shipped]** ~~Manual dark/light theme toggle.~~ Shipped.
 17. **[Minor]** Print-friendly stylesheet for the report page.
 18. **[Shipped]** ~~A "recently researched" list on `/app` pulling from local history.~~ Shipped, plus a favorites list with per-ticker trend went further than originally scoped here.
+43. **[Moderate]** First-time-user walkthrough: a "New user? Click here" entry point (landing page or `/app`) that opens a guided tour explaining how scoring works and walking through a repeatable set of first steps (research a ticker, save a favorite, build a portfolio). Distinct from the `/learn` encyclopedia, which is per-concept reference material you look something up in, not a linear onboarding flow. Not prioritized -- added to the list per Barak, 2026-09-04.
 
 ## AI layer
 
