@@ -63,6 +63,8 @@ Opens a small product site at `http://127.0.0.1:8000`:
 - `/` -- a landing page explaining what MarketSignal does
 - `/how-it-works` -- a walkthrough of the actual scoring methodology
 - `/app` -- the live demo: enter a real ticker, get a real report against live market data
+- `/portfolios` -- named, saved portfolios: aggregate signals and price performance across holdings
+- `/learn` -- a plain-language encyclopedia of every category and metric behind the scores
 
 ## Development
 
