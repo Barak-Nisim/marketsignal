@@ -35,6 +35,14 @@ FAKE_FINANCIALS = RawFinancials(
 
 OLD_FINANCIALS = replace(FAKE_FINANCIALS, as_of="2020-01-01", current_price=100)
 
+FAKE_MSFT = replace(
+    FAKE_FINANCIALS,
+    ticker="MSFT",
+    company_name="Microsoft Corporation",
+    trailing_pe=32,
+    revenue_growth=0.15,
+)
+
 
 @patch("marketsignal.cli.fetch_raw_financials")
 def test_research_no_ai_prints_report(mock_fetch, capsys, monkeypatch, tmp_path):
@@ -225,6 +233,50 @@ def test_research_shows_claim_accuracy_and_track_record(
     assert "1 of 1 judged fundamental claims held up (100%)" in captured.out
     assert "### Claim accuracy check" in captured.out
     assert "**Held up** -- High P/E" in captured.out
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_compare_prints_a_side_by_side_table(mock_fetch, capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+
+    exit_code = main(["compare", "AAPL", "MSFT"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "# Comparing AAPL vs. MSFT" in captured.out
+    assert "AAPL (Apple Inc.)" in captured.out
+    assert "MSFT (Microsoft Corporation)" in captured.out
+    assert "## By category" in captured.out
+    mock_fetch.assert_any_call("AAPL")
+    mock_fetch.assert_any_call("MSFT")
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_compare_writes_to_output_file(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+    output_path = tmp_path / "compare.md"
+
+    exit_code = main(["compare", "AAPL", "MSFT", "--output", str(output_path)])
+
+    assert exit_code == 0
+    assert "Comparing AAPL vs. MSFT" in output_path.read_text(encoding="utf-8")
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_compare_stops_cleanly_when_the_first_ticker_is_unknown(
+    mock_fetch, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path))
+    mock_fetch.side_effect = TickerNotFoundError("BOGUS")
+
+    exit_code = main(["compare", "BOGUS", "MSFT"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "Could not find market data for ticker 'BOGUS'" in captured.err
+    mock_fetch.assert_called_once_with("BOGUS")  # never reaches the second ticker
 
 
 def test_favorites_list_when_empty(capsys, monkeypatch, tmp_path):

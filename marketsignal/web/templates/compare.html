@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}MarketSignal: Compare two tickers{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Compare two tickers</h1>
+  <p class="subtitle">Same deterministic signals, side by side. "Leader" means a higher score, not a recommendation.</p>
+
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/compare" class="compare-form">
+    <div>
+      <label for="ticker_a">Ticker A</label>
+      <input type="text" id="ticker_a" name="ticker_a" value="{{ ticker_a or '' }}" class="ticker-input" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label for="ticker_b">Ticker B</label>
+      <input type="text" id="ticker_b" name="ticker_b" value="{{ ticker_b or '' }}" class="ticker-input" autocomplete="off" spellcheck="false">
+    </div>
+    <button type="submit">Compare</button>
+  </form>
+
+  {% if comparison %}
+  <div class="example-panel">
+    <div class="example-panel-header">
+      <div>
+        <p class="example-company">{{ comparison.ticker_a }} <span class="field-caption">{{ comparison.company_name_a }}</span></p>
+        <p class="example-score-num">{% if comparison.overall_score_a is not none %}{{ "%.2f"|format(comparison.overall_score_a) }} / 4.0{% else %}n/a{% endif %}</p>
+        <p class="example-score-tier">{{ comparison.tier_a }}</p>
+      </div>
+      <div>
+        <p class="example-company">{{ comparison.ticker_b }} <span class="field-caption">{{ comparison.company_name_b }}</span></p>
+        <p class="example-score-num">{% if comparison.overall_score_b is not none %}{{ "%.2f"|format(comparison.overall_score_b) }} / 4.0{% else %}n/a{% endif %}</p>
+        <p class="example-score-tier">{{ comparison.tier_b }}</p>
+      </div>
+    </div>
+    <p class="field-caption">
+      Overall leader:
+      {% if comparison.overall_leader == "a" %}{{ comparison.ticker_a }}
+      {% elif comparison.overall_leader == "b" %}{{ comparison.ticker_b }}
+      {% else %}Tie{% endif %}
+    </p>
+  </div>
+
+  <h3>By category</h3>
+  <table>
+    <thead><tr><th>Category</th><th>{{ comparison.ticker_a }}</th><th>{{ comparison.ticker_b }}</th><th>Leader</th></tr></thead>
+    <tbody>
+      {% for cat in comparison.categories %}
+      <tr>
+        <td>{{ cat.category_name }}</td>
+        <td>{% if cat.score_a is not none %}{{ "%.2f"|format(cat.score_a) }} ({{ tier_for_score(cat.score_a) }}){% else %}n/a{% endif %}</td>
+        <td>{% if cat.score_b is not none %}{{ "%.2f"|format(cat.score_b) }} ({{ tier_for_score(cat.score_b) }}){% else %}n/a{% endif %}</td>
+        <td class="{{ 'outcome-up' if cat.leader else '' }}">
+          {% if cat.leader == "a" %}{{ comparison.ticker_a }}
+          {% elif cat.leader == "b" %}{{ comparison.ticker_b }}
+          {% else %}Tie{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p class="field-caption">
+    "Leader" means a higher deterministic signal score, category by category -- not a
+    recommendation to buy the leader or sell the other one. See each ticker's own
+    <a href="/app?ticker={{ comparison.ticker_a }}">{{ comparison.ticker_a }}</a> or
+    <a href="/app?ticker={{ comparison.ticker_b }}">{{ comparison.ticker_b }}</a>
+    research report for metric-level detail.
+  </p>
+  {% endif %}
+
+  <p class="disclaimer">Not financial advice. This compares the same deterministic signals shown on each ticker's own report; it does not project future returns or recommend buying or selling anything.</p>
+</div>
+{% endblock %}

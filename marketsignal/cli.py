@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from marketsignal.accuracy import compute_accuracy_summary
+from marketsignal.comparison import build_comparison
 from marketsignal.data.yfinance_source import (
     TickerNotFoundError,
     fetch_price_history,
@@ -30,7 +31,7 @@ from marketsignal.portfolios import (
     save_portfolio,
 )
 from marketsignal.report.export import render_csv, render_json
-from marketsignal.report.markdown import render
+from marketsignal.report.markdown import render, render_comparison
 from marketsignal.scoring import score_financials, tier_for_score
 from marketsignal.sector_benchmarks import build_valuation_sector_view
 from marketsignal.thesis_history import (
@@ -64,6 +65,16 @@ def _build_parser() -> argparse.ArgumentParser:
         default="markdown",
         help="Output format (default: markdown). csv/json export the deterministic "
         "score data only, for tracking outside the app -- no AI thesis is fetched.",
+    )
+
+    compare = subparsers.add_parser("compare", help="Compare two tickers side by side")
+    compare.add_argument("ticker_a", metavar="TICKER_A")
+    compare.add_argument("ticker_b", metavar="TICKER_B")
+    compare.add_argument(
+        "--output",
+        "-o",
+        metavar="PATH",
+        help="Write the comparison to a file instead of stdout",
     )
 
     serve = subparsers.add_parser("serve", help="Run the MarketSignal web UI locally")
@@ -207,6 +218,27 @@ def _run_research(args: argparse.Namespace) -> int:
     if args.output:
         Path(args.output).write_text(report, encoding="utf-8")
         print(f"Report written to {args.output}", file=sys.stderr)
+    else:
+        print(report)
+
+    return 0
+
+
+def _run_compare(args: argparse.Namespace) -> int:
+    results = []
+    for ticker in (args.ticker_a, args.ticker_b):
+        try:
+            results.append(score_financials(fetch_raw_financials(ticker)))
+        except TickerNotFoundError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+
+    comparison = build_comparison(*results)
+    report = render_comparison(comparison)
+
+    if args.output:
+        Path(args.output).write_text(report, encoding="utf-8")
+        print(f"Comparison written to {args.output}", file=sys.stderr)
     else:
         print(report)
 
@@ -384,6 +416,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "research":
         return _run_research(args)
+    if args.command == "compare":
+        return _run_compare(args)
     if args.command == "serve":
         return _run_serve(args)
     if args.command == "favorites":

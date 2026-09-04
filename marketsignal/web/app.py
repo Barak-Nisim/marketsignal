@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 
 from marketsignal.accuracy import compute_accuracy_summary
 from marketsignal.charts import sparkline_svg
+from marketsignal.comparison import build_comparison
 from marketsignal.data.yfinance_source import (
     TickerNotFoundError,
     fetch_price_history,
@@ -120,6 +121,42 @@ def learn(request: Request):
         {
             "sections": learn_sections(),
             "score_scale_explanation": SCORE_SCALE_EXPLANATION,
+        },
+    )
+
+
+@app.get("/compare", response_class=HTMLResponse)
+def compare_form(request: Request):
+    return templates.TemplateResponse(request, "compare.html", {"comparison": None, "error": None})
+
+
+@app.post("/compare", response_class=HTMLResponse)
+def compare_run(request: Request, ticker_a: str = Form(...), ticker_b: str = Form(...)):
+    results = []
+    for ticker in (ticker_a, ticker_b):
+        try:
+            results.append(score_financials(fetch_raw_financials(ticker)))
+        except TickerNotFoundError as exc:
+            return templates.TemplateResponse(
+                request,
+                "compare.html",
+                {
+                    "comparison": None,
+                    "error": str(exc),
+                    "ticker_a": ticker_a,
+                    "ticker_b": ticker_b,
+                },
+            )
+
+    return templates.TemplateResponse(
+        request,
+        "compare.html",
+        {
+            "comparison": build_comparison(*results),
+            "error": None,
+            "tier_for_score": tier_for_score,
+            "ticker_a": ticker_a,
+            "ticker_b": ticker_b,
         },
     )
 

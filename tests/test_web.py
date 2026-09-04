@@ -169,6 +169,43 @@ def test_export_unknown_ticker_redirects_to_the_form(mock_fetch, monkeypatch, tm
     assert response.headers["location"] == "/app?ticker=BOGUS"
 
 
+def test_compare_form_page_loads_with_no_result():
+    response = client.get("/compare")
+
+    assert response.status_code == 200
+    assert 'action="/compare"' in response.text
+    assert "By category" not in response.text  # no comparison submitted yet
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_compare_shows_a_side_by_side_table(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+
+    response = client.post("/compare", data={"ticker_a": "AAPL", "ticker_b": "MSFT"})
+
+    assert response.status_code == 200
+    assert "By category" in response.text
+    assert "Apple Inc." in response.text
+    assert "Microsoft Corporation" in response.text
+    assert "Overall leader" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_compare_shows_an_error_for_an_unknown_ticker_and_never_fetches_the_second(
+    mock_fetch, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    mock_fetch.side_effect = TickerNotFoundError("BOGUS")
+
+    response = client.post("/compare", data={"ticker_a": "BOGUS", "ticker_b": "MSFT"})
+
+    assert response.status_code == 200
+    assert "Could not find market data for ticker &#39;BOGUS&#39;" in response.text
+    assert "By category" not in response.text
+    mock_fetch.assert_called_once_with("BOGUS")
+
+
 @patch("marketsignal.web.app.fetch_raw_financials")
 def test_report_has_plain_language_info_tooltips(mock_fetch, monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))

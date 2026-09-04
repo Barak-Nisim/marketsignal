@@ -3,6 +3,7 @@ a Markdown research brief."""
 
 from __future__ import annotations
 
+from marketsignal.comparison import TickerComparison
 from marketsignal.models import ScoreResult, WhatChanged
 from marketsignal.scoring import SIGNAL_LEVELS, tier_for_score
 from marketsignal.sector_benchmarks import build_valuation_sector_view
@@ -166,5 +167,49 @@ def render(
                     f"- **{check['status']}** -- {check['claim']} ({check['explanation']})"
                 )
             lines.append("")
+
+    return "\n".join(lines)
+
+
+def _score_cell(score: float | None) -> str:
+    if score is None:
+        return "n/a"
+    return f"{score:.2f} ({tier_for_score(score)})"
+
+
+def render_comparison(comparison: TickerComparison) -> str:
+    c = comparison
+    lines: list[str] = []
+
+    lines.append(f"# Comparing {c.ticker_a} vs. {c.ticker_b}")
+    lines.append("")
+    lines.append(f"| | {c.ticker_a} ({c.company_name_a}) | {c.ticker_b} ({c.company_name_b}) |")
+    lines.append("|---|---|---|")
+    overall_leader = c.ticker_a if c.overall_leader == "a" else (
+        c.ticker_b if c.overall_leader == "b" else "Tie"
+    )
+    lines.append(
+        f"| Overall | {_score_cell(c.overall_score_a)} | {_score_cell(c.overall_score_b)} |"
+    )
+    lines.append("")
+    lines.append(f"**Overall leader:** {overall_leader}")
+    lines.append("")
+
+    lines.append("## By category")
+    lines.append("")
+    lines.append(f"| Category | {c.ticker_a} | {c.ticker_b} | Leader |")
+    lines.append("|---|---|---|---|")
+    for cat in c.categories:
+        leader = c.ticker_a if cat.leader == "a" else (c.ticker_b if cat.leader == "b" else "Tie")
+        lines.append(
+            f"| {cat.category_name} | {_score_cell(cat.score_a)} | "
+            f"{_score_cell(cat.score_b)} | {leader} |"
+        )
+    lines.append("")
+    lines.append(
+        '"Leader" means a higher deterministic signal score, category by category -- '
+        "not a recommendation to buy the leader or sell the other one. See each "
+        "ticker's own full research report for metric-level detail."
+    )
 
     return "\n".join(lines)
