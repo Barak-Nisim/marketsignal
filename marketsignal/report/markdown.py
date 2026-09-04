@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from marketsignal.models import ScoreResult, WhatChanged
 from marketsignal.scoring import SIGNAL_LEVELS, tier_for_score
+from marketsignal.sector_benchmarks import build_valuation_sector_view
 
 PERCENT_METRICS = {
     "revenue_growth",
@@ -84,6 +85,18 @@ def render(
             signal_str = SIGNAL_LEVELS[metric.score] if metric.score is not None else "n/a"
             lines.append(f"| {metric.label} | {value_str} | {signal_str} |")
         lines.append("")
+
+        if category.id == "valuation":
+            sector_comparisons = build_valuation_sector_view(f)
+            if sector_comparisons:
+                lines.append(f"**vs. {f.sector} sector median:**")
+                lines.append("")
+                for c in sector_comparisons:
+                    lines.append(
+                        f"- {c.metric_label}: {c.ticker_value:.2f} vs. {c.sector_median:.2f} "
+                        f"-- {c.label}"
+                    )
+                lines.append("")
 
     if ai_narrative:
         lines.append("## Thesis")

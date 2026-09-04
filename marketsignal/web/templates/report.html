@@ -175,6 +175,20 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if category.id == "valuation" and sector_comparisons %}
+  <div class="outcomes-box">
+    <p class="field-caption">vs. {{ result.financials.sector }} sector median (approximate reference points, not live data):</p>
+    <ul>
+      {% for c in sector_comparisons %}
+      <li>
+        {{ c.metric_label }}: {{ "%.2f"|format(c.ticker_value) }} vs. {{ "%.2f"|format(c.sector_median) }}
+        <span class="{{ 'outcome-up' if c.label == 'Cheaper than sector' else 'outcome-down' if c.label == 'More expensive than sector' else '' }}">{{ c.label }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
   {% endfor %}
 
   {% if ai_narrative and ai_narrative.invalidation_check %}

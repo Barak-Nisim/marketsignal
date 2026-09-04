@@ -92,6 +92,31 @@ def test_research_renders_report(mock_fetch, monkeypatch, tmp_path):
 
 
 @patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_shows_sector_valuation_comparison(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = FAKE_FINANCIALS  # sector="Technology", trailing_pe=28 (== median)
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert "vs. Technology sector median" in response.text
+    assert "In line with sector" in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_research_omits_sector_comparison_without_a_sector(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = replace(FAKE_FINANCIALS, sector=None)
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert "sector median" not in response.text
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
 def test_report_has_plain_language_info_tooltips(mock_fetch, monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
     monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))

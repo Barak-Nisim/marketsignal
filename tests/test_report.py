@@ -48,6 +48,23 @@ def test_render_formats_percentages_and_ratios_differently():
     assert "28.00" in report  # trailing_pe -> plain ratio
 
 
+def test_render_includes_sector_comparison_under_valuation():
+    report = render(_sample_result())
+
+    assert "vs. Technology sector median" in report
+    assert "Price / Book: 45.00 vs. 8.00 -- More expensive than sector" in report
+    assert "Trailing P/E: 28.00 vs. 28.00 -- In line with sector" in report
+
+
+def test_render_omits_sector_comparison_when_sector_is_unknown():
+    from dataclasses import replace
+
+    result = score_financials(replace(_sample_result().financials, sector=None))
+    report = render(result)
+
+    assert "vs." not in report
+
+
 def test_render_includes_what_changed_section():
     from marketsignal.models import WhatChanged
 

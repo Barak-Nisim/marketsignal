@@ -51,6 +51,7 @@ from marketsignal.portfolios import (
 from marketsignal.price_trend import build_price_ranges
 from marketsignal.report.markdown import format_value
 from marketsignal.scoring import score_financials, signal_bucket, tier_for_score
+from marketsignal.sector_benchmarks import build_valuation_sector_view
 from marketsignal.thesis_history import (
     load_thesis_history,
     previous_claims,
@@ -186,6 +187,7 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
     trend = full_history[-TREND_WINDOW:]
     outcomes = compute_outcomes(full_history, financials.current_price)
     price_ranges = build_price_ranges(fetch_price_history(financials.ticker))
+    sector_comparisons = build_valuation_sector_view(financials)
 
     return templates.TemplateResponse(
         request,
@@ -205,6 +207,7 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
             "outcomes": outcomes,
             "journal_entries": load_journal(financials.ticker),
             "price_ranges": price_ranges,
+            "sector_comparisons": sector_comparisons,
         },
     )
 
