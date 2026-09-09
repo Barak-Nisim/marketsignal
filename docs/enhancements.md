@@ -36,7 +36,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 
 19. **[Moderate]** Stream the thesis token-by-token instead of waiting for the full response.
 20. **[Minor]** A thesis-depth toggle (quick take vs. a longer deep-dive).
-21. **[Minor]** Cache AI narratives for repeated same-day requests on the same ticker to avoid redundant spend.
+21. **[Shipped]** ~~Cache AI narratives for repeated same-day requests on the same ticker to avoid redundant spend.~~ Shipped via `ai/narrative_cache.py`: keyed by ticker plus a hash of `as_of`/overall score/category scores/prior thesis-history context, so an identical re-run is served from `~/.marketsignal/narrative_cache/<TICKER>.json` with no API call, and any real change to the underlying data or thesis-history context is itself a cache miss (no separate TTL to reason about). Deliberately excludes `what_changed` from the key -- see the module docstring for why that's safe.
 
 ## Engineering & quality
 

@@ -8,6 +8,11 @@ This module never recomputes or overrides scores -- it only narrates the
 deterministic output of marketsignal.scoring. Requires ANTHROPIC_API_KEY
 (see .env.example); not exercised by the test suite or CI, which run with
 mocked responses.
+
+Repeat calls against effectively unchanged inputs (a same-day re-run of
+`research TICKER`) are served from narrative_cache instead of re-spending
+tokens on a response that would come back identical -- see that module
+for what counts as "unchanged."
 """
 
 from __future__ import annotations
@@ -17,6 +22,7 @@ import json
 import anthropic
 from dotenv import load_dotenv
 
+from marketsignal.ai.narrative_cache import get_cached_narrative, store_narrative
 from marketsignal.ai.prompts import SYSTEM_PROMPT, build_user_prompt
 from marketsignal.models import ScoreResult, WhatChanged
 
@@ -118,6 +124,10 @@ def generate_narrative(
     previous_invalidation_conditions: list[str] | None = None,
     previous_claims: list[dict] | None = None,
 ) -> dict:
+    cached = get_cached_narrative(result, previous_invalidation_conditions, previous_claims)
+    if cached is not None:
+        return cached
+
     load_dotenv()
     client = anthropic.Anthropic()
 
@@ -137,4 +147,6 @@ def generate_narrative(
     )
 
     text = next(block.text for block in response.content if block.type == "text")
-    return json.loads(text)
+    narrative = json.loads(text)
+    store_narrative(result, previous_invalidation_conditions, previous_claims, narrative)
+    return narrative

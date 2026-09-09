@@ -72,7 +72,8 @@ def _mock_client_with_response(payload: dict) -> MagicMock:
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")
-def test_generate_narrative_parses_mocked_response(mock_anthropic):
+def test_generate_narrative_parses_mocked_response(mock_anthropic, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
     mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
 
     narrative = generate_narrative(_sample_result())
@@ -82,7 +83,8 @@ def test_generate_narrative_parses_mocked_response(mock_anthropic):
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")
-def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
+def test_generate_narrative_uses_structured_output_schema(mock_anthropic, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
     mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
 
     generate_narrative(_sample_result())
@@ -123,7 +125,10 @@ def test_generate_narrative_uses_structured_output_schema(mock_anthropic):
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")
-def test_generate_narrative_includes_previous_invalidation_conditions_in_prompt(mock_anthropic):
+def test_generate_narrative_includes_previous_invalidation_conditions_in_prompt(
+    mock_anthropic, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
     mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
 
     generate_narrative(
@@ -138,7 +143,10 @@ def test_generate_narrative_includes_previous_invalidation_conditions_in_prompt(
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")
-def test_generate_narrative_includes_previous_claims_in_prompt(mock_anthropic):
+def test_generate_narrative_includes_previous_claims_in_prompt(
+    mock_anthropic, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
     mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
 
     generate_narrative(
@@ -159,7 +167,8 @@ def test_generate_narrative_includes_previous_claims_in_prompt(mock_anthropic):
 
 
 @patch("marketsignal.ai.narrator.anthropic.Anthropic")
-def test_generate_narrative_includes_what_changed_in_prompt(mock_anthropic):
+def test_generate_narrative_includes_what_changed_in_prompt(mock_anthropic, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
     mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
     what_changed = WhatChanged(
         previous_as_of="2025-12-01", overall_score_delta=0.5, category_deltas={"growth": 0.5}
@@ -170,3 +179,33 @@ def test_generate_narrative_includes_what_changed_in_prompt(mock_anthropic):
     _, kwargs = mock_anthropic.return_value.messages.create.call_args
     user_message = kwargs["messages"][0]["content"]
     assert "2025-12-01" in user_message
+
+
+@patch("marketsignal.ai.narrator.anthropic.Anthropic")
+def test_generate_narrative_second_identical_call_is_served_from_cache(
+    mock_anthropic, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
+    mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
+
+    first = generate_narrative(_sample_result())
+    second = generate_narrative(_sample_result())
+
+    assert first == second == FAKE_NARRATIVE
+    mock_anthropic.return_value.messages.create.assert_called_once()
+
+
+@patch("marketsignal.ai.narrator.anthropic.Anthropic")
+def test_generate_narrative_cache_misses_when_previous_claims_differ(
+    mock_anthropic, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_NARRATIVE_CACHE_DIR", str(tmp_path))
+    mock_anthropic.return_value = _mock_client_with_response(FAKE_NARRATIVE)
+
+    generate_narrative(_sample_result())
+    generate_narrative(
+        _sample_result(),
+        previous_claims=[{"claim": "New claim", "based_on": "Growth", "source": "catalyst"}],
+    )
+
+    assert mock_anthropic.return_value.messages.create.call_count == 2
