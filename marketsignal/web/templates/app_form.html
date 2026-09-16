@@ -34,8 +34,16 @@
 
   <form method="post" action="/research">
     <label for="ticker">Ticker symbol</label>
-    <input type="text" id="ticker" name="ticker" value="{{ ticker }}" class="ticker-input" autocomplete="off" spellcheck="false">
-    <p class="field-caption">Try a well-known one to start: AAPL, MSFT, SPY, VOO.</p>
+    <input type="text" id="ticker" name="ticker" value="{{ ticker }}" class="ticker-input" list="ticker-options" autocomplete="off" spellcheck="false">
+    {# Plain HTML5 datalist: the browser filters as you type, no JS and no lookup API.
+       Your favorites and recently researched tickers come first (see ticker_suggestions.py);
+       anything not listed can still be typed in and researched. #}
+    <datalist id="ticker-options">
+      {% for suggestion in ticker_suggestions %}
+      <option value="{{ suggestion.symbol }}">{{ suggestion.label }}</option>
+      {% endfor %}
+    </datalist>
+    <p class="field-caption">Start typing for suggestions, or try a well-known one: AAPL, MSFT, SPY, VOO.</p>
 
     {% if recent %}
     <div class="recent-tickers">

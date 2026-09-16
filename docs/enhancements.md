@@ -24,7 +24,7 @@ Effort tags: **Minor** (an evening), **Moderate** (a focused day or two), **Majo
 
 ## Web UI / UX
 
-13. **[Minor]** Ticker autocomplete/typeahead on the research form.
+13. **[Shipped]** ~~Ticker autocomplete/typeahead on the research form.~~ Shipped as a plain HTML5 `<datalist>` bound to the ticker input on `/app`, populated server-side by `ticker_suggestions.py`: favorites first, then recently researched tickers (reusing `favorites.py` and `history.py`, no new persistence), then a curated 68-entry set of widely-held large caps and index/sector ETFs, deduplicated by symbol so a favorited ticker keeps its own label instead of being relabeled by the curated entry. No JS, no typeahead library, and no ticker-lookup API call -- the browser does the matching, so this is a fixed server-rendered list rather than a live symbol search, and the curated set deliberately isn't exhaustive since any ticker not on it can still be typed in and researched exactly as before. Also rendered on the unknown-ticker error page, which is precisely when a suggestion is most useful. Scoped to `/app` only: the landing-page hero form is marketing and shouldn't surface personal favorites, and `/compare`'s two inputs are a natural follow-on, not part of this item.
 14. **[Shipped]** ~~A sparkline *price* chart on the report page.~~ Shipped with a 5D/1M/1Y/All range toggle: one daily-history fetch per research run, sliced into four windows and pre-rendered server-side, so switching ranges is instant with no extra request. No intraday "1 Day" option -- deliberately left out since it needs a separate, less reliable fetch. See `price_trend.py`.
 15. **[Minor]** Mobile polish pass on the report's metric-detail tables.
 16. **[Shipped]** ~~Manual dark/light theme toggle.~~ Shipped.

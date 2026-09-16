@@ -61,6 +61,7 @@ from marketsignal.thesis_history import (
     previous_invalidation_conditions,
     record_thesis_and_diff,
 )
+from marketsignal.ticker_suggestions import build_ticker_suggestions
 
 WEB_DIR = Path(__file__).parent
 TREND_WINDOW = 10  # most recent research runs shown in a trend sparkline
@@ -173,6 +174,7 @@ def app_form(request: Request, ticker: str = "AAPL"):
             "error": None,
             "recent": list_recent_tickers(),
             "favorites": _favorite_summaries(),
+            "ticker_suggestions": build_ticker_suggestions(),
         },
     )
 
@@ -204,7 +206,12 @@ def research(request: Request, ticker: str = Form(...), use_ai: str | None = For
         return templates.TemplateResponse(
             request,
             "app_form.html",
-            {"ticker": ticker, "ai_available": _ai_available(), "error": str(exc)},
+            {
+                "ticker": ticker,
+                "ai_available": _ai_available(),
+                "error": str(exc),
+                "ticker_suggestions": build_ticker_suggestions(),
+            },
         )
 
     result = score_financials(financials)

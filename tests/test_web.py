@@ -77,6 +77,61 @@ def test_app_form_lists_recently_researched_tickers_after_a_run(mock_fetch, monk
     assert "/app?ticker=AAPL" in response.text
 
 
+def _datalist_of(response) -> str:
+    """The rendered ticker <datalist>, isolated so option-order assertions
+    can't be confused by the same ticker appearing elsewhere on the page."""
+    return response.text.split('<datalist id="ticker-options">')[1].split("</datalist>")[0]
+
+
+def test_app_form_ticker_input_is_bound_to_an_autocomplete_datalist(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+
+    response = client.get("/app")
+
+    assert response.status_code == 200
+    assert 'list="ticker-options"' in response.text
+    datalist = _datalist_of(response)
+    # curated common tickers are there with no history at all
+    assert '<option value="AAPL">Apple Inc.</option>' in datalist
+    assert '<option value="SPY">SPDR S&amp;P 500 ETF Trust</option>' in datalist
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_ticker_autocomplete_lists_favorites_and_recents_before_common_tickers(
+    mock_fetch, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = FAKE_MSFT
+
+    client.post("/research", data={"ticker": "MSFT"})
+    client.post("/favorites/add", data={"ticker": "TSLA"}, follow_redirects=False)
+
+    datalist = _datalist_of(client.get("/app"))
+
+    assert '<option value="TSLA">Favorite</option>' in datalist
+    assert '<option value="MSFT">Recently researched</option>' in datalist
+    # personal usage outranks the curated list, and neither is duplicated by it
+    assert datalist.index('"TSLA"') < datalist.index('"MSFT"') < datalist.index('"AAPL"')
+    assert datalist.count('"TSLA"') == 1
+    assert datalist.count('"MSFT"') == 1
+
+
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_ticker_autocomplete_still_renders_on_the_unknown_ticker_error_page(
+    mock_fetch, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.side_effect = TickerNotFoundError("BOGUS")
+
+    response = client.post("/research", data={"ticker": "BOGUS"})
+
+    assert response.status_code == 200
+    assert '<option value="AAPL">Apple Inc.</option>' in _datalist_of(response)
+
+
 @patch("marketsignal.web.app.fetch_raw_financials")
 def test_research_renders_report(mock_fetch, monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
