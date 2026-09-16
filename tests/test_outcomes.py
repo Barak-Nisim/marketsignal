@@ -97,3 +97,32 @@ def test_snapshots_missing_as_of_are_skipped():
     today = dt.date(2026, 3, 1)
 
     assert compute_outcomes(history, current_price=110.0, today=today) == []
+
+
+def test_same_day_reruns_collapse_to_one_outcome():
+    history = [
+        _snapshot("2026-01-01", 100.0, overall_score=2.70),
+        _snapshot("2026-01-01", 100.5, overall_score=2.83),
+        _snapshot("2026-01-01", 100.2, overall_score=2.70),
+    ]
+    today = dt.date(2026, 1, 10)  # 9 days elapsed
+
+    outcomes = compute_outcomes(history, current_price=110.0, today=today)
+
+    assert len(outcomes) == 1
+    # the day's last run wins, not the first
+    assert outcomes[0].price_then == 100.2
+    assert outcomes[0].overall_score == 2.70
+
+
+def test_same_day_reruns_dont_crowd_out_other_days_under_the_limit():
+    history = [
+        _snapshot("2026-01-01", 100.0),
+        _snapshot("2026-01-01", 100.5),
+        _snapshot("2026-01-08", 105.0),
+    ]
+    today = dt.date(2026, 1, 20)
+
+    outcomes = compute_outcomes(history, current_price=110.0, today=today, limit=5)
+
+    assert [o.as_of for o in outcomes] == ["2026-01-01", "2026-01-08"]

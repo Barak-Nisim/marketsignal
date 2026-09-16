@@ -47,6 +47,16 @@ def _horizon_label(days_elapsed: int) -> str:
     return "1 week+"
 
 
+def _latest_snapshot_per_day(history: list[Snapshot]) -> list[Snapshot]:
+    """Collapses same-day re-runs (research called more than once in one
+    day) to that day's last snapshot, so signal performance shows one row
+    per day instead of one per run."""
+    by_day: dict[str, Snapshot] = {}
+    for snap in history:
+        by_day[snap.as_of] = snap
+    return list(by_day.values())
+
+
 def compute_outcomes(
     history: list[Snapshot],
     current_price: float | None,
@@ -58,7 +68,7 @@ def compute_outcomes(
     today = today or dt.date.today()
 
     outcomes = []
-    for snap in history:
+    for snap in _latest_snapshot_per_day(history):
         if not snap.price or not snap.as_of:
             continue
         try:
