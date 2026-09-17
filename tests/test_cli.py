@@ -485,3 +485,83 @@ def test_portfolio_performance_unknown_name_returns_error(capsys, monkeypatch, t
     captured = capsys.readouterr()
     assert exit_code == 1
     assert "No portfolio named 'Nope'." in captured.err
+
+
+@patch("marketsignal.ai.narrator.generate_narrative")
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_portfolio_run_scores_every_ticker_and_records_history(
+    mock_fetch, mock_narrate, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    main(["portfolio", "create", "Watchlist", "AAPL", "MSFT"])
+    mock_fetch.side_effect = [FAKE_FINANCIALS, FAKE_MSFT]
+
+    exit_code = main(["portfolio", "run", "Watchlist"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    lines = [line for line in captured.out.splitlines() if line.strip()]
+    assert len(lines) == 2
+    assert lines[0].split("\t")[0] == "AAPL"
+    assert lines[0].split("\t")[3] == "new"
+    assert lines[1].split("\t")[0] == "MSFT"
+    assert "Watchlist: 2 recorded, 0 failed." in captured.err
+    # the whole point of this command is that it never costs AI tokens
+    mock_narrate.assert_not_called()
+
+    for ticker in ("AAPL", "MSFT"):
+        snapshots = json.loads(
+            (tmp_path / "history" / f"{ticker}.json").read_text(encoding="utf-8")
+        )
+        assert len(snapshots) == 1
+        assert snapshots[0]["ticker"] == ticker
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_portfolio_run_reports_change_against_the_previous_run(
+    mock_fetch, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    main(["portfolio", "create", "Watchlist", "AAPL"])
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    main(["portfolio", "run", "Watchlist"])
+    capsys.readouterr()
+    exit_code = main(["portfolio", "run", "Watchlist"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.out.splitlines()[0].split("\t")[3] == "unchanged"
+
+
+@patch("marketsignal.cli.fetch_raw_financials")
+def test_portfolio_run_continues_past_a_bad_ticker_and_exits_non_zero(
+    mock_fetch, capsys, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path / "portfolios"))
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    main(["portfolio", "create", "Mixed", "BOGUS", "AAPL", "MSFT"])
+    mock_fetch.side_effect = [TickerNotFoundError("BOGUS"), FAKE_FINANCIALS, FAKE_MSFT]
+
+    exit_code = main(["portfolio", "run", "Mixed"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1  # so a scheduler can alert on it
+    assert "BOGUS\terror\t" in captured.err
+    assert "Mixed: 2 recorded, 1 failed." in captured.err
+    # the two good tickers after the bad one still ran and were recorded
+    out_tickers = [line.split("\t")[0] for line in captured.out.splitlines() if line.strip()]
+    assert out_tickers == ["AAPL", "MSFT"]
+    assert not (tmp_path / "history" / "BOGUS.json").exists()
+
+
+def test_portfolio_run_unknown_name_returns_error(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
+
+    exit_code = main(["portfolio", "run", "Nope"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "No portfolio named 'Nope'." in captured.err

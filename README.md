@@ -52,6 +52,37 @@ This adds a reasoned thesis, a confidence level, and key risk factors to the rep
 
 Every run is saved to `~/.marketsignal/history/<TICKER>.json` (outside the repo -- real personal research, never committed). Research the same ticker again later and the report shows exactly what moved.
 
+### Unattended watchlist runs
+
+`portfolio run` scores every ticker in a saved portfolio and logs each result to history, without opening the browser and without spending AI tokens -- the deterministic half of a research run only:
+
+```bash
+marketsignal portfolio create "Watchlist" AAPL MSFT NVDA
+marketsignal portfolio run "Watchlist"
+```
+
+```
+AAPL	2.68	Above Average	new
+MSFT	3.10	Above Average	changed +0.22
+NVDA	2.40	Average	unchanged
+```
+
+One tab-separated line per ticker: ticker, overall score, tier, and what changed since that ticker's last run. Failures print to stderr and don't stop the run; the exit code is non-zero if any ticker failed, so a scheduler can alert on it.
+
+Every weekday at 6pm, via cron:
+
+```
+0 18 * * 1-5 marketsignal portfolio run "Watchlist" >> ~/marketsignal.log 2>&1
+```
+
+Or on Windows, via Task Scheduler:
+
+```powershell
+schtasks /create /tn MarketSignalWatchlist /tr "marketsignal portfolio run Watchlist" /sc daily /st 18:00
+```
+
+Browse the results later on `/app` -- these runs feed the same history, sparklines, and outcome tracking as any other research run.
+
 ## Web UI
 
 ```bash

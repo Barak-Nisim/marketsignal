@@ -17,6 +17,7 @@ from marketsignal.data.yfinance_source import (
 from marketsignal.favorites import add_favorite, list_favorites, remove_favorite
 from marketsignal.history import load_history, record_and_diff
 from marketsignal.journal import add_journal_entry, load_journal
+from marketsignal.models import WhatChanged
 from marketsignal.outcomes import compute_outcomes
 from marketsignal.portfolio_performance import (
     DEFAULT_PERIOD,
@@ -117,6 +118,12 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=PERIOD_LABELS,
         help=f"Tracked window (default: {DEFAULT_PERIOD})",
     )
+    portfolio_run = portfolio_action.add_parser(
+        "run",
+        help="Score every ticker in a portfolio and log it to history, unattended "
+        "(no AI, no prompts -- for cron / Task Scheduler)",
+    )
+    portfolio_run.add_argument("name")
     portfolio_delete = portfolio_action.add_parser("delete", help="Delete a saved portfolio")
     portfolio_delete.add_argument("name")
 
@@ -290,8 +297,65 @@ def _run_portfolio(args: argparse.Namespace) -> int:
         return _run_portfolio_review(args.name)
     elif args.portfolio_action == "performance":
         return _run_portfolio_performance(args.name, args.period)
+    elif args.portfolio_action == "run":
+        return _run_portfolio_run(args.name)
 
     return 0
+
+
+def _change_label(what_changed: WhatChanged | None) -> str:
+    if what_changed is None:
+        return "new"
+    delta = what_changed.overall_score_delta
+    if delta is None:
+        return "unknown"
+    if round(delta, 2) == 0:
+        return "unchanged"
+    return f"changed {delta:+.2f}"
+
+
+def _run_portfolio_run(name: str) -> int:
+    """Unattended watchlist run: scores every ticker in a saved portfolio and
+    records it to history exactly as `research` does, with no AI call and no
+    prompts, so it can be driven from cron or Task Scheduler. One
+    tab-separated line per ticker (ticker, score, tier, what changed) keeps a
+    log file greppable. A failing ticker is reported and skipped rather than
+    aborting the run, and the exit code is non-zero if any ticker failed, so a
+    scheduler can alert on it."""
+    portfolio = get_portfolio(name)
+    if portfolio is None:
+        print(f"No portfolio named '{name}'.", file=sys.stderr)
+        return 1
+    if not portfolio.tickers:
+        print(f"Portfolio '{portfolio.name}' has no tickers.", file=sys.stderr)
+        return 1
+
+    failed = 0
+    for ticker in portfolio.tickers:
+        try:
+            result = score_financials(fetch_raw_financials(ticker))
+            what_changed = record_and_diff(result)
+        except (TickerNotFoundError, DataUnavailableError) as exc:
+            failed += 1
+            print(f"{ticker.upper()}\terror\t{exc}", file=sys.stderr)
+            continue
+        except Exception as exc:  # unattended: one broken ticker can't kill the run
+            failed += 1
+            print(
+                f"{ticker.upper()}\terror\tunexpected {type(exc).__name__}: {exc}",
+                file=sys.stderr,
+            )
+            continue
+
+        score_text = f"{result.overall_score:.2f}" if result.overall_score is not None else "n/a"
+        print(
+            f"{result.financials.ticker}\t{score_text}\t{result.tier}\t"
+            f"{_change_label(what_changed)}"
+        )
+
+    recorded = len(portfolio.tickers) - failed
+    print(f"{portfolio.name}: {recorded} recorded, {failed} failed.", file=sys.stderr)
+    return 1 if failed else 0
 
 
 def _run_portfolio_review(name: str) -> int:
