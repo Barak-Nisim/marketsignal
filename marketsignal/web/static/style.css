@@ -944,3 +944,128 @@ dl.meta dd { margin: 0; }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .theme-toggle .icon-sun { display: none; }
 .theme-toggle .icon-moon { display: inline; }
+
+/* ---------- print: the report page ----------
+   Scoped to body.page-report (set by report.html through base.html's
+   body_class block), so printing a marketing page is left alone. The
+   rule of thumb: anything you could only act on stays on screen -- nav,
+   theme toggle, favorite button, export links, the price range toggle,
+   the journal's add-note form, tooltip popovers -- and everything that
+   is research content prints: scores, metric tables, outcomes, thesis,
+   evidence tags, invalidation checks and existing journal notes.
+
+   Colour is never the only carrier of meaning on this page, so a
+   greyscale print loses nothing: price moves keep their +/- sign, tiers
+   are spelled out ("Above Average"), and the claim/status chips are
+   already text ("Fact", "Held up", "Triggered"). The chip rules below
+   only swap tinted fills for plain borders, since browsers drop
+   background colours when printing anyway. */
+
+/* Necessarily document-wide -- @page can't be scoped to an element --
+   but a modest margin is a sane default for any page here. */
+@page { margin: 1.5cm; }
+
+@media print {
+  /* Force the light palette. Without this a dark-themed screen prints as
+     near-white text, since browsers drop the dark background but keep
+     the text colour. Re-declared for all three theme selectors and last
+     in source order so it wins over both the OS-preference block and the
+     explicit data-theme override, which have equal specificity. */
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    color-scheme: light;
+    --border: #999999;
+    --muted: #333333;
+    --ink: #000000;
+    --ink-navy: #000000;
+    --accent: #000000;
+    --accent-dark: #000000;
+    --accent-2: #000000;
+    --down: #000000;
+    --accent-tint: transparent;
+    --accent-2-tint: transparent;
+    --down-tint: transparent;
+    --card-bg: #ffffff;
+    --page-bg: #ffffff;
+    --tint-bg: #ffffff;
+    --text: #000000;
+  }
+
+  body.page-report {
+    background: #ffffff;
+    color: #000000;
+    font-size: 10.5pt;
+  }
+
+  /* Interactive-only chrome. */
+  body.page-report .ticker-tape,
+  body.page-report .site-nav,
+  body.page-report .site-footer,
+  body.page-report .back-link,
+  body.page-report .favorite-toggle-form,
+  body.page-report .export-links,
+  body.page-report .range-toggle,
+  body.page-report .journal-form,
+  body.page-report .info-tip-wrap { display: none; }
+
+  /* Full page width: the on-screen centred column wastes paper. */
+  body.page-report .container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  body.page-report h1 { font-size: 16pt; margin-bottom: 0.2rem; }
+  body.page-report h3 { font-size: 12pt; }
+  body.page-report h4 { font-size: 10.5pt; }
+  body.page-report a { color: #000000; text-decoration: none; }
+
+  /* Boxes lose their tint when printed, so give them an outline to keep
+     reading as grouped units rather than loose paragraphs. */
+  body.page-report .trend-box,
+  body.page-report .price-trend-box,
+  body.page-report .outcomes-box,
+  body.page-report .what-changed-box,
+  body.page-report .journal-box {
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
+  }
+
+  /* Keep a card or a single table row from being split across a page. */
+  body.page-report .trend-box,
+  body.page-report .price-trend-box,
+  body.page-report .outcomes-box,
+  body.page-report .what-changed-box,
+  body.page-report .journal-box,
+  body.page-report .thesis-case,
+  body.page-report tr,
+  body.page-report li { break-inside: avoid; page-break-inside: avoid; }
+
+  /* A heading stranded at the foot of a page is the classic print bug. */
+  body.page-report h1,
+  body.page-report h3,
+  body.page-report h4 { break-after: avoid; page-break-after: avoid; }
+
+  /* Repeat column headers when a metric table runs onto a second page. */
+  body.page-report thead { display: table-header-group; }
+  body.page-report th,
+  body.page-report td { border-bottom: 1px solid var(--border); }
+
+  /* Chips: the text already says what they mean, so drop the fill and
+     keep a border that survives a black-and-white printer. */
+  body.page-report .claim-type-tag,
+  body.page-report .evidence-tag,
+  body.page-report .invalidation-status,
+  body.page-report .claim-status {
+    background: none;
+    color: #000000;
+    border: 1px solid #666666;
+  }
+
+  /* Sparklines carry a bright green stroke attribute (see charts.py),
+     close to invisible on paper. A plain CSS rule beats an SVG
+     presentation attribute, so no !important is needed. */
+  body.page-report .sparkline polyline { stroke: #000000; }
+  body.page-report .sparkline circle { fill: #000000; }
+}

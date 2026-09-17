@@ -16,7 +16,7 @@
     })();
   </script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <div class="ticker-tape" aria-hidden="true">
     <div class="ticker-track">
       {% for i in range(2) %}

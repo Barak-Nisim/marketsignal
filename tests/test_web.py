@@ -759,6 +759,53 @@ def test_portfolio_review_performance_lists_tickers_without_history_as_excluded(
     assert "MSFT" in response.text
 
 
+@patch("marketsignal.web.app.fetch_raw_financials")
+def test_report_page_is_marked_for_the_print_stylesheet(mock_fetch, monkeypatch, tmp_path):
+    monkeypatch.setenv("MARKETSIGNAL_HISTORY_DIR", str(tmp_path / "history"))
+    monkeypatch.setenv("MARKETSIGNAL_FAVORITES_DIR", str(tmp_path / "favorites"))
+    mock_fetch.return_value = FAKE_FINANCIALS
+
+    response = client.post("/research", data={"ticker": "AAPL"})
+
+    assert response.status_code == 200
+    assert '<body class="page-report">' in response.text
+    assert 'class="back-link"' in response.text  # the hook the print rules hide it by
+
+
+def test_marketing_pages_are_not_marked_for_the_print_stylesheet():
+    # the print rules are report-only; the marketing pages must not inherit them
+    assert "page-report" not in client.get("/").text
+    assert "page-report" not in client.get("/learn").text
+
+
+def test_print_stylesheet_hides_chrome_and_forces_black_on_white():
+    css = client.get("/static/style.css").text
+
+    assert "@media print" in css
+    print_block = css.split("@media print")[1]
+
+    # interactive-only chrome is hidden on paper
+    for selector in (
+        ".site-nav",
+        ".back-link",
+        ".export-links",
+        ".range-toggle",
+        ".journal-form",
+        ".info-tip-wrap",
+    ):
+        assert f"body.page-report {selector}" in print_block
+
+    # a dark-themed screen still prints black on white
+    assert ':root[data-theme="dark"]' in print_block
+    assert "--text: #000000;" in print_block
+    assert "--page-bg: #ffffff;" in print_block
+
+    # sparklines are re-stroked, and page breaks are handled
+    assert "body.page-report .sparkline polyline" in print_block
+    assert "display: table-header-group;" in print_block
+    assert "page-break-inside: avoid;" in print_block
+
+
 def test_portfolios_delete_removes_it_and_redirects(monkeypatch, tmp_path):
     monkeypatch.setenv("MARKETSIGNAL_PORTFOLIOS_DIR", str(tmp_path))
     client.post(
